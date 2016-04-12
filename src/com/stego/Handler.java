@@ -25,12 +25,24 @@ public class Handler {
     }
 
     public Object process(){
-        if (decoder != null)
-            return decoder.decode(task.image, task.key);
+        if (decoder != null) {
+            if (task.getKey())
+                return decoder.decode(task.image, task.data);
+        }
 
         if (encoder != null) {
-            while (task.nextDataPart())
-                encoder.hideData(task.image, task.data, task.key, task.from.x, task.from.y);
+            if (!task.nextDataPart())
+                return false;
+
+            int length = task.image.getWidth();
+            int i = encoder.hideData(task.image, task.data, task.from.y * length + task.from.x);
+
+            while (task.nextDataPart()) {
+                i = encoder.hideData(task.image, task.data, task.from.y * length + task.from.x);
+            }
+
+            task.image.setRGB(i % length, i / length, (task.image.getRGB(i % length, i / length) & 0xfffffefe) |
+                                                                                                            0x10000);
 
             return true;
         }

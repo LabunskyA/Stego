@@ -15,7 +15,8 @@ class Decoder {
         byte[] result = new byte[image.getHeight() * length];
 
         int from = find(image, key);
-        System.out.println("Extracting from x = " + from % length + " y = " + from / length);
+        System.out.println("Extracting from x = " + (from - key.length * 4) % length +
+                                        " y = " + (from - key.length * 4) / length);
 
         int size = 0;
         for (int i = 0, temp = 0, part = 0;; i++, temp = 0) {

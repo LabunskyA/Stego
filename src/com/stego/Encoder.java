@@ -9,14 +9,8 @@ import java.util.Arrays;
  * VK: vk.com/labunsky
  */
 class Encoder {
-    void hideData(BufferedImage to, byte[] data, byte[] key, int fromX, int fromY) {
-        int length = to.getWidth();
-        int i = fromY * length + fromX;
-
-        i += encode(to, key, i);
-        i += encode(to, data, i) + 1;
-
-        to.setRGB(i % length, i / length, (to.getRGB(i % length, i / length) & 0xfffffefe) | 0x10000);
+    int hideData(BufferedImage to, byte[] data, int from) {
+        return from + encode(to, data, from) + 1;
     }
 
     private int encode(BufferedImage to, byte[] data, int from){

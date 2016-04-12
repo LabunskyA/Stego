@@ -17,29 +17,20 @@ public class Task {
 
     public BufferedImage image;
 
-    public byte[] key;
     public byte[] data;
     public Point from;
 
     private String input;
     private File imageFile;
 
-    public Task(String type, File imageFile, Object key, String input) throws IOException {
+    public Task(String type, File imageFile, String input) throws IOException {
         this.type = type.equals("--encode") || !type.equals("--decode");
 
         image = readBI(imageFile);
 
         this.imageFile = imageFile;
 
-        this.key = toBytes(key);
         this.input = input;
-    }
-
-    public Task(String type, File imageFile, Object key) throws IOException {
-        this.type = type.equals("--encode") || !type.equals("--decode");
-        image = readBI(imageFile);
-
-        this.key = toBytes(key);
     }
 
     private BufferedImage readBI(File file) throws IOException {
@@ -75,15 +66,23 @@ public class Task {
     }
 
     public Boolean nextDataPart() {
-        if (!input.contains("<p:"))
+        if (!input.contains("<"))
             return false;
 
-        input = cutFrom(input, "<p:");
+        input = cutFrom(input, "<");
         data = toBytes(getBetween(input, ">", "<"));
 
-        String[] temp = getBetween(input, "<p:", ">").split(",");
+        String[] temp = getBetween(input, ":", ">").split(",");
         from = new Point(Integer.parseInt(temp[0]), Integer.parseInt(temp[1]));
 
+        return true;
+    }
+
+    public Boolean getKey() {
+        if (input.length() == 0)
+            return false;
+
+        data = input.getBytes();
         return true;
     }
 

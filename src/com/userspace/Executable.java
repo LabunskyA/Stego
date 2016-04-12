@@ -30,15 +30,7 @@ public class Executable {
         if (!(imageFile = new File(args[0])).exists())
             throw new FileNotFoundException();
 
-        switch (args.length) {
-            case 4:
-                handler = new Handler(new Task(args[1], imageFile, args[2], args[3]));
-                break;
-            case 3:
-                handler = new Handler(new Task(args[1], imageFile, args[2]));
-                break;
-            default: throw new IllegalArgumentException();
-        }
+        handler = new Handler(new Task(args[1], imageFile, args[2]));
     }
 
     private String getResult() {
