@@ -19,15 +19,26 @@ class Decoder {
                                         " y = " + (from - key.length * 4) / length);
 
         int size = 0;
-        for (int i = 0, temp = 0, part = 0;; i++, temp = 0) {
-            for (int j = from + 4 * i, shift = 0; j - from - 4 * i < 4 && part != 4; j++, shift += 2) {
+        for (int i = 0, j, k, shift, temp = 0, part = 0;; i++, temp = 0) {
+            for (j = from + 4 * i, shift = 0; j - from - 4 * i < 4 && part != 4 && part != 7; j++, shift += 2) {
                 part = toDecoded(image.getRGB(j % length, j / length));
                 temp = temp | ((part & 3) << shift);
             }
 
-            if (part != 4)
+            if (part != 4 && part != 7)
                 result[size] = (byte) temp;
-            else break;
+            else if (part == 7) {
+                int p[] = new int[2];
+                for (k = j + 1, shift = 0; k < j + 33; k++, shift = (shift + 2) % 8) {
+                    part = toDecoded(image.getRGB(k % length, k / length));
+                    p[(k - j - 1) / 16] = p[(k - j - 1) / 16] | ((part & 3) << shift);
+                }
+
+                System.out.println(Arrays.toString(p));
+
+                from = p[1] * length + p[0];
+                i = -1;
+            } else break;
 
             size++;
         }

@@ -3,9 +3,11 @@ package com.userspace.task;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.IndexColorModel;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Arrays;
 
 /**
  * Created by LabunskyA
@@ -18,6 +20,7 @@ public class Task {
     public BufferedImage image;
 
     public byte[] data;
+    public byte[] meta;
     public Point from;
 
     private String input;
@@ -27,7 +30,6 @@ public class Task {
         this.type = type.equals("--encode") || !type.equals("--decode");
 
         image = readBI(imageFile);
-
         this.imageFile = imageFile;
 
         this.input = input;
@@ -47,7 +49,7 @@ public class Task {
     }
 
     public void finish() throws IOException {
-        ImageIO.write(image, "PNG", new File("stego.png"));
+        ImageIO.write(image, "PNG", imageFile);
     }
 
     private byte[] toBytes(Object object) {
@@ -72,8 +74,20 @@ public class Task {
         input = cutFrom(input, "<");
         data = toBytes(getBetween(input, ">", "<"));
 
-        String[] temp = getBetween(input, ":", ">").split(",");
-        from = new Point(Integer.parseInt(temp[0]), Integer.parseInt(temp[1]));
+        String[] temp = getBetween(input, "p:", ">").split(",");
+        int[] point = new int[]{Integer.parseInt(temp[0]), Integer.parseInt(temp[1])};
+        from = new Point(point[0], point[1]);
+
+        if (input.contains("<p:")) {
+            temp = getBetween(input, "<p:", ">").split(",");
+            point = new int[]{Integer.parseInt(temp[0]), Integer.parseInt(temp[1])};
+
+            meta = new byte[]{
+                    (byte) (point[0] & 0xff), (byte) ((point[0] & 0xff00) >> 2),
+                    (byte) ((point[0] & 0xff0000) >> 4), (byte) ((point[0] & 0xff000000) >> 6),
+                    (byte) (point[1] & 0xff), (byte) ((point[1] & 0xff00) >> 2),
+                    (byte) ((point[1] & 0xff0000) >> 4), (byte) ((point[1] & 0xff000000) >> 6)};
+        } else meta = null;
 
         return true;
     }
@@ -99,8 +113,8 @@ public class Task {
         return string;
     }
     private String getBetween(String string, String from, String to) {
-        if (string.contains(to))
-            return cutFrom(cutTo(string, to), from);
+        if (string.contains(to) && string.contains(from))
+            return cutTo(cutFrom(string, from), to);
 
         if (string.contains(from))
             return cutFrom(string, from);
