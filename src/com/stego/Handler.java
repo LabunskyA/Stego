@@ -25,29 +25,31 @@ public class Handler {
     }
 
     public Object process(){
-        if (decoder != null) {
+        if (decoder != null)
             if (task.getKey())
                 return decoder.decode(task.image, task.data);
-        }
 
         if (encoder != null) {
             int length = task.image.getWidth();
             int i = 0;
 
             while (task.nextDataPart()) {
+                System.out.println("Encoding from x = " + task.from.x + " y = " + task.from.y);
                 i = encoder.hideData(task.image, task.data, task.from.y * length + task.from.x);
 
                 if (task.meta != null) {
                     task.image.setRGB(i % length, i / length, (task.image.getRGB(i % length, i / length) & 0xfffffefe) |
                             0x10101);
-                    System.out.println(toDecoded(task.image.getRGB(i % length, i / length)));
 
+                    System.out.println("Encoding from x = " + (i + 1) % length + " y = " + (i + 1) / length);
                     i = encoder.hideData(task.image, task.meta, i + 1);
                 }
             }
 
+            System.out.println("Encoding from x = " + i % length + " y = " + i / length);
             task.image.setRGB(i % length, i / length, (task.image.getRGB(i % length, i / length) & 0xfffffefe) |
                                                                                                             0x10000);
+            System.out.println(toDecoded(task.image.getRGB(i % length, i / length)));
 
             return true;
         }

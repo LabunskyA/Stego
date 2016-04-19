@@ -22,25 +22,29 @@ class Decoder {
         for (int i = 0, j, k, shift, temp = 0, part = 0;; i++, temp = 0) {
             for (j = from + 4 * i, shift = 0; j - from - 4 * i < 4 && part != 4 && part != 7; j++, shift += 2) {
                 part = toDecoded(image.getRGB(j % length, j / length));
+                System.out.print(part);
                 temp = temp | ((part & 3) << shift);
             }
 
             if (part != 4 && part != 7)
-                result[size] = (byte) temp;
+                result[size++] = (byte) temp;
             else if (part == 7) {
                 int p[] = new int[2];
-                for (k = j + 1, shift = 0; k < j + 33; k++, shift = (shift + 2) % 8) {
-                    part = toDecoded(image.getRGB(k % length, k / length));
-                    p[(k - j - 1) / 16] = p[(k - j - 1) / 16] | ((part & 3) << shift);
-                }
+                System.out.println();
+                System.out.println("Extracting from x = " + j % length + " y = " + j / length);
 
-                System.out.println(Arrays.toString(p));
+                for (k = j, shift = 0; k < j + 32; k++, shift = (shift + 2) % 8) {
+                    part = toDecoded(image.getRGB(k % length, k / length));
+                    System.out.print(part);
+                    p[(k - j) / 16] = p[(k - j) / 16] | ((part & 3) << shift);
+                }
+                System.out.println();
+
+                System.out.println("Extracting from x = " + p[0] + " y = " + p[1]);
 
                 from = p[1] * length + p[0];
                 i = -1;
             } else break;
-
-            size++;
         }
         System.out.println();
 
