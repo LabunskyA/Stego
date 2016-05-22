@@ -19,7 +19,7 @@ public class Executable {
     public static void main(String[] args) throws IOException {
         Executable executable = new Executable(args);
 
-        System.out.println(executable.getResult());
+        System.out.println("\n" + executable.getResult());
     }
 
     private Executable(String[] args) throws IOException, IllegalArgumentException {

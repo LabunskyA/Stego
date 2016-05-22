@@ -9,6 +9,9 @@ import java.util.Arrays;
  * VK: vk.com/labunsky
  */
 class Encoder {
+    private int delta = 1;
+    private boolean transposed = false;
+
     int hideData(BufferedImage to, byte[] data, int from) {
         return from + encode(to, data, from) + 1;
     }
@@ -16,15 +19,15 @@ class Encoder {
     private int encode(BufferedImage to, byte[] data, int from){
         int length = to.getWidth();
 
-        int i, j = 0, shift;
-        for (i = 0; i < data.length; i++)
-            for (j = from + 4 * i, shift = 0; j - from - 4 * i < 4; j++, shift += 2) {
+        int i, j;
+        for (i = 0, j = from; i < data.length; i++)
+            for (int shift = 0; j - from - 4 * i < 4; j++, shift += 2) {
                 to.setRGB(j % length, j / length, toEncoded(to.getRGB(j % length, j / length), data[i], shift));
                 System.out.print(toDecoded(to.getRGB(j % length, j / length)));
             }
         System.out.println();
 
-        return 4 * i;
+        return i * 4;
     }
 
     private int toDecoded(int a) {
