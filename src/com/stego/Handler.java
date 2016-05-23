@@ -1,8 +1,9 @@
 package com.stego;
 
+import com.stego.coders.Decoder;
+import com.stego.coders.Encoder;
 import com.userspace.task.Task;
 
-import javax.imageio.ImageIO;
 import java.io.IOException;
 
 /**

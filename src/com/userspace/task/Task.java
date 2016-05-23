@@ -68,13 +68,13 @@ public class Task {
     }
 
     public Boolean nextDataPart() {
-        if (!input.contains("<"))
+        if (!input.contains("<p"))
             return false;
 
-        input = cutFrom(input, "<");
-        data = toBytes(getBetween(input, ">", "<"));
+        input = cutFrom(input, "<p");
+        data = toBytes(getBetween(input, ">", "<p"));
 
-        String[] temp = getBetween(input, "p:", ">").split(",");
+        String[] temp = getBetween(input, ":", ">").split(",");
         int[] point = new int[]{Integer.parseInt(temp[0]), Integer.parseInt(temp[1])};
         from = new Point(point[0], point[1]);
 
@@ -83,10 +83,10 @@ public class Task {
             point = new int[]{Integer.parseInt(temp[0]), Integer.parseInt(temp[1])};
 
             meta = new byte[]{
-                    (byte) (point[0] & 0xff), (byte) ((point[0] & 0xff00) >> 2),
-                    (byte) ((point[0] & 0xff0000) >> 4), (byte) ((point[0] & 0xff000000) >> 6),
-                    (byte) (point[1] & 0xff), (byte) ((point[1] & 0xff00) >> 2),
-                    (byte) ((point[1] & 0xff0000) >> 4), (byte) ((point[1] & 0xff000000) >> 6)};
+                    (byte) (point[0] & 0xff), (byte) ((point[0] & 0xff00) >> 8),
+                    (byte) ((point[0] & 0xff0000) >> 16), (byte) ((point[0] & 0xff000000) >> 24),
+                    (byte) (point[1] & 0xff), (byte) ((point[1] & 0xff00) >> 8),
+                    (byte) ((point[1] & 0xff0000) >> 16), (byte) ((point[1] & 0xff000000) >> 24)};
         } else meta = null;
 
         return true;
@@ -106,12 +106,14 @@ public class Task {
 
         return string;
     }
+
     private String cutTo(String string, String trigger) {
         if (string.contains(trigger))
             return string.substring(0, string.indexOf(trigger));
 
         return string;
     }
+
     private String getBetween(String string, String from, String to) {
         if (string.contains(to) && string.contains(from))
             return cutTo(cutFrom(string, from), to);
