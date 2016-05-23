@@ -1,5 +1,7 @@
 package com.stego.coders;
 
+import com.userspace.task.Block;
+
 import java.awt.image.BufferedImage;
 
 /**
@@ -8,12 +10,12 @@ import java.awt.image.BufferedImage;
  * VK: vk.com/labunsky
  */
 public class Decoder extends Coder {
-    public byte[] decode(BufferedImage image, byte[] key) {
+    public byte[] decode(BufferedImage image, Block[] key) {
         int length = image.getWidth();
 
         byte[] result = new byte[image.getHeight() * length];
 
-        int from = find(image, key) - key.length * 4;
+        int from = find(image, key) - key.length;
         int size = decode(image, result, from, 0);
 
         System.out.println();
@@ -76,16 +78,15 @@ public class Decoder extends Coder {
         }
     }
 
-    private int find(BufferedImage where, byte[] what) {
+    private int find(BufferedImage where, Block[] what) {
         int length = where.getWidth();
 
         for (int i = 0; i < where.getHeight() * length; i++)
-            for (int j = i, shift = 0; j < i + what.length * 4; j++, shift = (shift + 2) % 8)
-                if ((toDecoded(where.getRGB(j % length, j / length)) & 3) != ((what[(j - i) / 4] & (3 << shift)) >> shift))
+            for (int j = i; j < i + what.length; j++)
+                if ((toDecoded(where.getRGB(j % length, j / length)) & 3) != ((what[j - i].value)))
                     break;
                 else if (j == i + what.length - 1)
-                    return what.length * 4 + i;
-
+                    return what.length + i;
 
         return -1;
     }

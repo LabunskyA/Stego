@@ -3,7 +3,6 @@ package com.userspace.task;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.awt.image.IndexColorModel;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -19,8 +18,8 @@ public class Task {
 
     public BufferedImage image;
 
-    public byte[] data;
-    public byte[] meta;
+    public Block[] data;
+    public Block[] meta;
     public Point from;
 
     private String input;
@@ -52,19 +51,24 @@ public class Task {
         ImageIO.write(image, "PNG", imageFile);
     }
 
-    private byte[] toBytes(Object object) {
-        if (object instanceof String)
-            return ((String) object).getBytes();
+    private Block[] toBlocks(Object object) {
+        byte[] data;
+        Block[] result;
 
-        if (object instanceof File)
-            try {
-                return Files.readAllBytes(((File) object).toPath());
-            } catch (IOException e) {
-                e.printStackTrace();
-                return null;
-            }
+        if (object instanceof byte[]) {
+            result = new Block[((byte[]) object).length * 4];
+            data = (byte[]) object;
+        } else if (object instanceof String) {
+            String str = (String) object;
+            result = new Block[str/*.replaceAll("<(?:i|t)>", "@")*/.length() * 4];
+            data = str.getBytes();
+        } else return null;
 
-        return null;
+        for (int i = 0, j = 0; i < data.length; i++)
+            for (int shift = 0; shift < 7; j++, shift += 2)
+                result[j] = new Block((byte) ((data[i] >> shift) & 3));
+
+        return result;
     }
 
     public Boolean nextDataPart() {
@@ -72,7 +76,7 @@ public class Task {
             return false;
 
         input = cutFrom(input, "<p");
-        data = toBytes(getBetween(input, ">", "<p"));
+        data = toBlocks(getBetween(input, ">", "<p"));
 
         String[] temp = getBetween(input, ":", ">").split(",");
         int[] point = new int[]{Integer.parseInt(temp[0]), Integer.parseInt(temp[1])};
@@ -82,11 +86,11 @@ public class Task {
             temp = getBetween(input, "<p:", ">").split(",");
             point = new int[]{Integer.parseInt(temp[0]), Integer.parseInt(temp[1])};
 
-            meta = new byte[]{
+            meta = toBlocks(new byte[]{
                     (byte) (point[0] & 0xff), (byte) ((point[0] & 0xff00) >> 8),
                     (byte) ((point[0] & 0xff0000) >> 16), (byte) ((point[0] & 0xff000000) >> 24),
                     (byte) (point[1] & 0xff), (byte) ((point[1] & 0xff00) >> 8),
-                    (byte) ((point[1] & 0xff0000) >> 16), (byte) ((point[1] & 0xff000000) >> 24)};
+                    (byte) ((point[1] & 0xff0000) >> 16), (byte) ((point[1] & 0xff000000) >> 24)});
         } else meta = null;
 
         return true;
@@ -96,7 +100,7 @@ public class Task {
         if (input.length() == 0)
             return false;
 
-        data = input.getBytes();
+        data = toBlocks(input.getBytes());
         return true;
     }
 
