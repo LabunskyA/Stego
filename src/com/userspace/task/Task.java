@@ -60,13 +60,20 @@ public class Task {
             data = (byte[]) object;
         } else if (object instanceof String) {
             String str = (String) object;
-            result = new Block[str/*.replaceAll("<(?:i|t)>", "@")*/.length() * 4];
+            result = new Block[str.replaceAll("<(?:i|t)>", "").length() * 4 + str.split("<(?:i|t)>").length - 1];
             data = str.getBytes();
         } else return null;
 
         for (int i = 0, j = 0; i < data.length; i++)
             for (int shift = 0; shift < 7; j++, shift += 2)
-                result[j] = new Block((byte) ((data[i] >> shift) & 3));
+                if (Block.toControl(data, i) == Block.ControlBlock.NONE)
+                    result[j] = new Block((byte) ((data[i] >> shift) & 3));
+                else {
+                    result[j++] = new Block(Block.toControl(data, i));
+
+                    i += 2;
+                    break;
+                }
 
         return result;
     }
@@ -86,11 +93,10 @@ public class Task {
             temp = getBetween(input, "<p:", ">").split(",");
             point = new int[]{Integer.parseInt(temp[0]), Integer.parseInt(temp[1])};
 
-            meta = toBlocks(new byte[]{
+            meta = toBlocks(new byte[] {
                     (byte) (point[0] & 0xff), (byte) ((point[0] & 0xff00) >> 8),
-                    (byte) ((point[0] & 0xff0000) >> 16), (byte) ((point[0] & 0xff000000) >> 24),
-                    (byte) (point[1] & 0xff), (byte) ((point[1] & 0xff00) >> 8),
-                    (byte) ((point[1] & 0xff0000) >> 16), (byte) ((point[1] & 0xff000000) >> 24)});
+                    (byte) (point[1] & 0xff), (byte) ((point[1] & 0xff00) >> 8)
+            });
         } else meta = null;
 
         return true;

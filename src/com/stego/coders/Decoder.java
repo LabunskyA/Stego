@@ -3,6 +3,7 @@ package com.stego.coders;
 import com.userspace.task.Block;
 
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
 
 /**
  * Created by LabunskyA
@@ -31,27 +32,31 @@ public class Decoder extends Coder {
         for (int i = 0, j = from, temp = 0, part = 0;; i++, temp = 0) {
             boolean flag = true;
 
-            for (int shift = 0; shift < 7 && flag; j += delta, shift += 2)
-                switch (toBlock(part)) {
+            for (int shift = 0; shift < 7 && flag; j += delta, shift += 2) {
+                switch (toBlock(part = toDecoded(image.getRGB(j % length, j / length)))) {
+                    case INV:
+                        delta *= -1;
+                        flag = false;
+                        break;
+                    case TRANS:
+                        if (transposed) {
+                            delta /= length;
+                            j += delta;
+                        } else {
+                            j += delta;
+                            delta *= length;
+                        }
+                        transposed = !transposed;
                     case URL:
                     case EOF:
                         flag = false;
                         break;
-                    case INV:
-                        delta *= -1;
-                        break;
-                    case TRANS:
-                        j += delta;
-                        if (transposed)
-                            delta /= length;
-                        else delta *= length;
-                        break;
                     default:
-                        part = toDecoded(image.getRGB(j % length, j / length));
                         temp = temp | ((part & 3) << shift);
-
-                        System.out.print(part);
                 }
+
+                System.out.print(part);
+            }
 
             if (flag)
                 result[size++] = (byte) temp;
@@ -60,11 +65,11 @@ public class Decoder extends Coder {
                     int p[] = new int[2];
 
                     System.out.println();
-                    System.out.println("Extracting from x = " + (j -= delta) % length + " y = " + j / length);
+                    System.out.println("Extracting from x = " + j % length + " y = " + j / length);
 
-                    for (int shift = 0; shift < 63; j += delta, shift += 2) {
+                    for (int shift = 0; shift < 31; j += delta, shift += 2) {
                         part = toDecoded(image.getRGB(j % length, j / length));
-                        p[shift / 32] = p[shift / 32] | ((part & 3) << (shift % 32));
+                        p[shift / 16] = p[shift / 16] | ((part & 3) << (shift % 16));
 
                         System.out.print(part);
                     }

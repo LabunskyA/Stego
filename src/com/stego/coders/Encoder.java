@@ -11,7 +11,8 @@ import java.awt.image.BufferedImage;
  */
 public class Encoder extends Coder{
     public int hideData(BufferedImage to, Block[] data, int from) {
-        return from + encode(to, data, from) + 1;
+        System.out.println("Encoding from x = " + from % to.getWidth() + " y = " + from / to.getWidth());
+        return encode(to, data, from);
     }
 
     private int encode(BufferedImage to, Block[] data, int from) {
@@ -20,23 +21,26 @@ public class Encoder extends Coder{
         int i, j;
         for (i = 0, j = from; i < data.length; j += delta, i++) {
             to.setRGB(j % length, j / length, toEncoded(to.getRGB(j % length, j / length), data[i].value));
+            System.out.print(toDecoded(to.getRGB(j % length, j / length)));
+
             switch (data[i].type) {
                 case INV:
                     delta *= -1;
                     break;
                 case TRANS:
-                    j += delta;
-
-                    if (transposed)
+                    if (transposed) {
                         delta /= length;
-                    else delta *= length;
+                        j += delta;
+                    } else {
+                        j += delta;
+                        delta *= length;
+                    }
+                    transposed = !transposed;
             }
-
-            System.out.print(toDecoded(to.getRGB(j % length, j / length)));
         }
 
         System.out.println();
 
-        return i;
+        return j;
     }
 }

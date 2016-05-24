@@ -38,6 +38,20 @@ public class Block {
         }
     }
 
+    static ControlBlock toControl(byte[] arr, int from) {
+        if (!(arr[from] == '<' && arr[from + 2] == '>'))
+            return ControlBlock.NONE;
+
+        switch (arr[from + 1]) {
+            case 'i':
+                return ControlBlock.INV;
+            case 't':
+                return ControlBlock.TRANS;
+            default:
+                return ControlBlock.NONE;
+        }
+    }
+
     @Override
     public String toString() {
         return String.valueOf(value);

@@ -25,7 +25,7 @@ public class Handler {
         this.task = task;
     }
 
-    public Object process(){
+    public Object process() {
         if (decoder != null)
             if (task.getKey())
                 return decoder.decode(task.image, task.data);
@@ -35,31 +35,25 @@ public class Handler {
             int i = 0;
 
             while (task.nextDataPart()) {
-                System.out.println("Encoding from x = " + task.from.x + " y = " + task.from.y);
                 i = encoder.hideData(task.image, task.data, task.from.y * length + task.from.x);
 
                 if (task.meta != null) {
                     task.image.setRGB(i % length, i / length, (task.image.getRGB(i % length, i / length) & 0xfffffefe) |
                             0x10101);
 
-                    System.out.println("Encoding from x = " + (i + 1) % length + " y = " + (i + 1) / length);
-                    i = encoder.hideData(task.image, task.meta, i + 1);
+                    encoder.hideData(task.image, task.meta, i + encoder.delta);
                 }
             }
 
             System.out.println("Encoding from x = " + i % length + " y = " + i / length);
             task.image.setRGB(i % length, i / length, (task.image.getRGB(i % length, i / length) & 0xfffffefe) |
                                                                                                             0x10000);
-            System.out.println(toDecoded(task.image.getRGB(i % length, i / length)));
+            System.out.println(4);
 
             return true;
         }
 
         return false;
-    }
-
-    private int toDecoded(int a) {
-        return ((a & ~0xfffeffff) >> 14) | (((a & ~0xfeff) >> 8) & 1) | ((a  & ~0xfe & 1) << 1);
     }
 
     public boolean writeResult() {
