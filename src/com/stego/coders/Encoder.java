@@ -2,6 +2,7 @@ package com.stego.coders;
 
 import com.userspace.task.Block;
 
+import java.awt.*;
 import java.awt.image.BufferedImage;
 
 /**
@@ -19,14 +20,11 @@ public class Encoder extends Coder{
         int length = to.getWidth();
 
         int i, j;
-        for (i = 0, j = from; i < data.length; j += delta, i++) {
+        for (i = 0, j = from; i < data.length; i++) {
             to.setRGB(j % length, j / length, toEncoded(to.getRGB(j % length, j / length), data[i].value));
             System.out.print(toDecoded(to.getRGB(j % length, j / length)));
 
             switch (data[i].type) {
-                case INV:
-                    delta *= -1;
-                    break;
                 case TRANS:
                     if (transposed) {
                         delta /= length;
@@ -36,6 +34,12 @@ public class Encoder extends Coder{
                         delta *= length;
                     }
                     transposed = !transposed;
+                    break;
+
+                case INV:
+                    delta *= -1;
+                default:
+                    j += delta;
             }
         }
 

@@ -3,7 +3,6 @@ package com.stego.coders;
 import com.userspace.task.Block;
 
 import java.awt.image.BufferedImage;
-import java.util.Arrays;
 
 /**
  * Created by LabunskyA
@@ -39,19 +38,19 @@ public class Decoder extends Coder {
                         flag = false;
                         break;
                     case TRANS:
-                        if (transposed) {
+                        if (transposed)
                             delta /= length;
-                            j += delta;
-                        } else {
+                        else {
                             j += delta;
                             delta *= length;
+                            j -= delta;
                         }
                         transposed = !transposed;
                     case URL:
                     case EOF:
                         flag = false;
                         break;
-                    default:
+                    case NONE:
                         temp = temp | ((part & 3) << shift);
                 }
 
