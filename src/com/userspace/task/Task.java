@@ -67,7 +67,8 @@ public class Task {
 
             int dataLen = section.length - 1;
             for (String partLength : section)
-                dataLen += Integer.parseInt(partLength) * 4;
+                if (partLength.length() > 0)
+                    dataLen += Integer.parseInt(partLength) * 4;
 
             result = new Block[dataLen];
             data = mergeWithInput(section, str).getBytes();
@@ -92,11 +93,16 @@ public class Task {
 
         String result = "";
         for (String part : section) {
-            int length = Integer.parseInt(part);
+            if (part.length() > 0) {
+                int length = Integer.parseInt(part);
 
-            fullIdx += part.length();
-            result += input.substring(inputIdx, inputIdx += length);
-            try { result += full.substring(fullIdx, fullIdx += 3); } catch (StringIndexOutOfBoundsException ignored){}
+                fullIdx += part.length();
+                result += input.substring(inputIdx, inputIdx += length);
+            }
+
+            try {
+                result += full.substring(fullIdx, fullIdx += 3);
+            } catch (StringIndexOutOfBoundsException ignored){}
         }
 
         return result;

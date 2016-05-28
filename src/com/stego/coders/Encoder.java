@@ -2,7 +2,6 @@ package com.stego.coders;
 
 import com.userspace.task.Block;
 
-import java.awt.*;
 import java.awt.image.BufferedImage;
 
 /**
