@@ -5,8 +5,6 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.util.Arrays;
 
 /**
  * Created by LabunskyA
@@ -18,20 +16,25 @@ public class Task {
 
     public BufferedImage image;
 
+    public Point from;
+    private int inputIdx = 0;
+
     public Block[] data;
     public Block[] meta;
-    public Point from;
 
-    private String input;
-    private File imageFile;
+    private String pattern;
+    private final String input;
+    private final File container;
 
-    public Task(String type, File imageFile, String input) throws IOException {
+    public Task(String type, File container, String pattern, byte[] input) throws IOException {
         this.type = type.equals("--encode") || !type.equals("--decode");
 
-        image = readBI(imageFile);
-        this.imageFile = imageFile;
+        image = readBI(container);
+        this.container = container;
 
-        this.input = input;
+        if (this.type)
+            this.pattern = pattern;
+        this.input = new String(input);
     }
 
     private BufferedImage readBI(File file) throws IOException {
@@ -48,7 +51,7 @@ public class Task {
     }
 
     public void finish() throws IOException {
-        ImageIO.write(image, "PNG", imageFile);
+        ImageIO.write(image, "PNG", container);
     }
 
     private Block[] toBlocks(Object object) {
@@ -60,8 +63,14 @@ public class Task {
             data = (byte[]) object;
         } else if (object instanceof String) {
             String str = (String) object;
-            result = new Block[str.replaceAll("<(?:i|t)>", "").length() * 4 + str.split("<(?:i|t)>").length - 1];
-            data = str.getBytes();
+            String[] section = str.split("<(?:i|t)>");
+
+            int dataLen = section.length - 1;
+            for (String partLength : section)
+                dataLen += Integer.parseInt(partLength) * 4;
+
+            result = new Block[dataLen];
+            data = mergeWithInput(section, str).getBytes();
         } else return null;
 
         for (int i = 0, j = 0; i < data.length; i++)
@@ -78,19 +87,34 @@ public class Task {
         return result;
     }
 
+    private String mergeWithInput(String[] section, String full) {
+        int fullIdx = 0;
+
+        String result = "";
+        for (String part : section) {
+            int length = Integer.parseInt(part);
+
+            fullIdx += part.length();
+            result += input.substring(inputIdx, inputIdx += length);
+            try { result += full.substring(fullIdx, fullIdx += 3); } catch (StringIndexOutOfBoundsException ignored){}
+        }
+
+        return result;
+    }
+
     public Boolean nextDataPart() {
-        if (!input.contains("<p"))
+        if (!pattern.contains("<p"))
             return false;
 
-        input = cutFrom(input, "<p");
-        data = toBlocks(getBetween(input, ">", "<p"));
+        pattern = cutFrom(pattern, "<p");
+        data = toBlocks(getBetween(pattern, ">", "<p"));
 
-        String[] temp = getBetween(input, ":", ">").split(",");
+        String[] temp = getBetween(pattern, ":", ">").split(",");
         int[] point = new int[]{Integer.parseInt(temp[0]), Integer.parseInt(temp[1])};
         from = new Point(point[0], point[1]);
 
-        if (input.contains("<p:")) {
-            temp = getBetween(input, "<p:", ">").split(",");
+        if (pattern.contains("<p:")) {
+            temp = getBetween(pattern, "<p:", ">").split(",");
             point = new int[]{Integer.parseInt(temp[0]), Integer.parseInt(temp[1])};
 
             meta = toBlocks(new byte[] {
