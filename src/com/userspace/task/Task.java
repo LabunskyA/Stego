@@ -119,17 +119,46 @@ public class Task {
         int[] point = new int[]{Integer.parseInt(temp[0]), Integer.parseInt(temp[1])};
         from = new Point(point[0], point[1]);
 
-        if (pattern.contains("<p:")) {
-            temp = getBetween(pattern, "<p:", ">").split(",");
-            point = new int[]{Integer.parseInt(temp[0]), Integer.parseInt(temp[1])};
+        switch (getSectionEnd(pattern.indexOf("<p:"), pattern.indexOf("<pm:"))) {
+            case URL:
+                temp = getBetween(pattern, "<p:", ">").split(",");
+                point = new int[]{Integer.parseInt(temp[0]), Integer.parseInt(temp[1])};
 
-            meta = toBlocks(new byte[] {
-                    (byte) (point[0] & 0xff), (byte) ((point[0] & 0xff00) >> 8),
-                    (byte) (point[1] & 0xff), (byte) ((point[1] & 0xff00) >> 8)
-            });
-        } else meta = null;
+                meta = toBlocks(new byte[] {
+                        (byte) (point[0] & 0xff), (byte) ((point[0] & 0xff00) >> 8),
+                        (byte) (point[1] & 0xff), (byte) ((point[1] & 0xfe00) >> 8)
+                });
+                break;
+            case URL_M:
+                temp = getBetween(pattern, "<pm:", ">").split(",");
+                point = new int[]{Integer.parseInt(temp[0]), Integer.parseInt(temp[1]), Integer.parseInt(temp[2])};
+
+                meta = toBlocks(new byte[] {
+                        (byte) (point[0] & 0xff), (byte) ((point[0] & 0xff00) >> 8),
+                        (byte) (point[1] & 0xff), (byte) ((point[1] & 0xfe00 | 0x0100) >> 8),
+                        (byte) (point[2]  & 0xff)
+                });
+                break;
+            default:
+                meta = null;
+        }
 
         return true;
+    }
+
+    private Block.ControlBlock getSectionEnd(int p, int pm) {
+        if (p == pm)
+            return Block.ControlBlock.EOF;
+
+        if (p == -1)
+            return Block.ControlBlock.URL_M;
+        if (pm == -1)
+            return Block.ControlBlock.URL;
+
+        if (p < pm)
+            return Block.ControlBlock.URL;
+
+        return Block.ControlBlock.URL_M;
     }
 
     public Boolean getKey() {

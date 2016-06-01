@@ -6,7 +6,7 @@ package com.userspace.task;
  * VK: vk.com/labunsky
  */
 public class Block {
-    public enum ControlBlock {EOF, URL, INV, TRANS, NONE}
+    public enum ControlBlock {EOF, URL, URL_M, INV, TRANS, NONE}
 
     public final ControlBlock type;
     public final byte value;

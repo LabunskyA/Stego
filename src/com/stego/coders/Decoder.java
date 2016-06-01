@@ -61,25 +61,35 @@ public class Decoder extends Coder {
                 result[size++] = (byte) temp;
             else switch (toBlock(part)) {
                 case URL:
-                    int p[] = new int[2];
-
-                    System.out.println();
-                    System.out.println("Extracting from x = " + j % length + " y = " + j / length);
-
-                    for (int shift = 0; shift < 31; j += delta, shift += 2) {
-                        part = toDecoded(image.getRGB(j % length, j / length));
-                        p[shift / 16] = p[shift / 16] | ((part & 3) << (shift % 16));
-
-                        System.out.print(part);
-                    }
-
-                    System.out.println();
-
-                    size = decode(image, result, p[1] * length + p[0], size);
+                    size = extractPoint(image, j, result, size);
                 case EOF:
                     return size;
             }
         }
+    }
+
+    private int extractPoint(BufferedImage image, int j, byte[] result, int size) {
+        int length = image.getWidth(), part;
+        int p[] = new int[2];
+
+        System.out.println();
+        System.out.println("Extracting from x = " + j % length + " y = " + j / length);
+
+        for (int shift = 0; shift < 31; j += delta, shift += 2) {
+            part = toDecoded(image.getRGB(j % length, j / length));
+            p[shift / 16] = p[shift / 16] | ((part & 3) << (shift % 16));
+
+            System.out.print(part);
+        }
+
+        if ((p[1] & 0x0100) != 0) {
+            System.out.println("Mark!");
+        }
+        p[1] &= 0xfeff;
+
+        System.out.println();
+
+        return decode(image, result, p[1] * length + p[0], size);
     }
 
     private int find(BufferedImage where, Block[] what) {
