@@ -126,7 +126,7 @@ public class Task {
 
                 meta = toBlocks(new byte[] {
                         (byte) (point[0] & 0xff), (byte) ((point[0] & 0xff00) >> 8),
-                        (byte) (point[1] & 0xff), (byte) ((point[1] & 0xfe00) >> 8)
+                        (byte) (point[1] & 0xff), (byte) ((point[1] & 0x7f00) >> 8)
                 });
                 break;
             case URL_M:
@@ -135,7 +135,7 @@ public class Task {
 
                 meta = toBlocks(new byte[] {
                         (byte) (point[0] & 0xff), (byte) ((point[0] & 0xff00) >> 8),
-                        (byte) (point[1] & 0xff), (byte) ((point[1] & 0xfe00 | 0x0100) >> 8),
+                        (byte) (point[1] & 0xff), (byte) ((point[1] & 0xff00 | 0x8000) >> 8),
                         (byte) (point[2]  & 0xff)
                 });
                 break;

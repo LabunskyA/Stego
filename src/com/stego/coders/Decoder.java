@@ -28,7 +28,7 @@ public class Decoder extends Coder {
         int length = image.getWidth();
         System.out.println("Extracting from x = " + from % length + " y = " + from / length);
 
-        for (int i = 0, j = from, temp = 0, part = 0;; i++, temp = 0) {
+        for (int j = from, temp = 0, part = 0;; temp = 0) {
             boolean flag = true;
 
             for (int shift = 0; shift < 7 && flag; j += delta, shift += 2) {
@@ -61,7 +61,13 @@ public class Decoder extends Coder {
                 result[size++] = (byte) temp;
             else switch (toBlock(part)) {
                 case URL:
-                    size = extractPoint(image, j, result, size);
+                    int tempSize;
+                    if ((tempSize = extractPoint(image, j, result, size)) != -1)
+                        size = tempSize;
+                    else {
+                        j += delta * 4;
+                        break;
+                    }
                 case EOF:
                     return size;
             }
@@ -82,14 +88,33 @@ public class Decoder extends Coder {
             System.out.print(part);
         }
 
-        if ((p[1] & 0x0100) != 0) {
-            System.out.println("Mark!");
-        }
-        p[1] &= 0xfeff;
+        if ((p[1] & 0x8000) != 0)
+            if (!processMark(image, j))
+                return -1;
+        p[1] &= 0x7fff;
 
         System.out.println();
 
         return decode(image, result, p[1] * length + p[0], size);
+    }
+
+    private boolean processMark(BufferedImage image, int j) {
+        int length = image.getWidth(), part, mark = 0;
+        for (int shift = 0; shift < 7; j += delta, shift += 2) {
+            part = toDecoded(image.getRGB(j % length, j / length));
+            mark = mark | (part << shift);
+        }
+
+        if (mark == 0)
+            return false;
+
+        mark--;
+        for (int shift = 6; shift > -1; j -= delta, shift -= 2) {
+            int x = j % length, y = j / length;
+            image.setRGB(x, y, toEncoded(image.getRGB(x, y), (byte) (mark >> shift & 3)));
+        }
+
+        return true;
     }
 
     private int find(BufferedImage where, Block[] what) {
