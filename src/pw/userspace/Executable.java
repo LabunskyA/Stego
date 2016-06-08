@@ -1,7 +1,6 @@
-package com.userspace;
+package pw.userspace;
 
-import com.stego.Handler;
-import com.userspace.task.Task;
+import pw.stego.Task;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -13,7 +12,7 @@ import java.nio.file.Files;
  * GitHub: github.com/LabunskyA
  * VK: vk.com/labunsky
  */
-public class Executable {
+class Executable {
     private Handler handler;
 
     public static void main(String[] args) throws IOException {
@@ -48,8 +47,9 @@ public class Executable {
             return new String((byte[]) result);
 
         if (result instanceof Boolean) {
-            handler.writeResult();
-            return "Everything is" + (!(Boolean) result ? "not":"") + " ok";
+            Boolean finalResult = (Boolean) result | handler.writeResult();
+
+            return "Everything is" + (!finalResult ? "not":"") + " ok";
         }
 
         return result.toString();

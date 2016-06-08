@@ -1,4 +1,4 @@
-package com.userspace.task;
+package pw.stego;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -12,7 +12,7 @@ import java.io.IOException;
  * VK: vk.com/labunsky
  */
 public class Task {
-    public boolean type;
+    public final boolean type;
 
     public BufferedImage image;
 

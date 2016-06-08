@@ -1,8 +1,8 @@
-package com.stego;
+package pw.userspace;
 
-import com.stego.coders.Decoder;
-import com.stego.coders.Encoder;
-import com.userspace.task.Task;
+import pw.stego.Task;
+import pw.stego.coders.Decoder;
+import pw.stego.coders.Encoder;
 
 import java.io.IOException;
 
@@ -11,13 +11,13 @@ import java.io.IOException;
  * GitHub: github.com/LabunskyA
  * VK: vk.com/labunsky
  */
-public class Handler {
+class Handler {
     private Encoder encoder;
     private Decoder decoder;
 
-    private Task task;
+    private final Task task;
 
-    public Handler(Task task){
+    Handler(Task task){
         if (task.type)
             encoder = new Encoder();
         else decoder = new Decoder();
@@ -25,7 +25,7 @@ public class Handler {
         this.task = task;
     }
 
-    public Object process() {
+    Object process() {
         if (decoder != null)
             if (task.getKey())
                 return decoder.decode(task.image, task.data);
@@ -56,7 +56,7 @@ public class Handler {
         return false;
     }
 
-    public boolean writeResult() {
+    boolean writeResult() {
         try {
             task.finish();
         } catch (IOException e) {

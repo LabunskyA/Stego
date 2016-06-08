@@ -1,6 +1,6 @@
-package com.stego.coders;
+package pw.stego.coders;
 
-import com.userspace.task.Block;
+import pw.stego.Block;
 
 /**
  * Created by LabunskyA
