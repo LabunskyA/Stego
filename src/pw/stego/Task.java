@@ -7,9 +7,8 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Created by LabunskyA
- * GitHub: github.com/LabunskyA
- * VK: vk.com/labunsky
+ * Class for whole input data with associated container image.
+ * Methods designed to work with data sections.
  */
 public class Task {
     public final boolean type;
@@ -50,10 +49,18 @@ public class Task {
         return image;
     }
 
+    /**
+     * Writes all changes from RAM to original image file
+     * @throws IOException if something wrong with writing into container
+     */
     public void finish() throws IOException {
         ImageIO.write(image, "PNG", container);
     }
 
+    /**
+     * @param object Data to represent as blocks array
+     * @return Blocks array from specifed input
+     */
     private Block[] toBlocks(Object object) {
         byte[] data;
         Block[] result;
@@ -76,7 +83,7 @@ public class Task {
 
         for (int i = 0, j = 0; i < data.length; i++)
             for (int shift = 0; shift < 7; j++, shift += 2)
-                if (Block.toControl(data, i) == Block.ControlBlock.NONE)
+                if (Block.toControl(data, i) == Block.Type.NONE)
                     result[j] = new Block((byte) ((data[i] >> shift) & 3));
                 else {
                     result[j++] = new Block(Block.toControl(data, i));
@@ -88,6 +95,11 @@ public class Task {
         return result;
     }
 
+    /**
+     * @param section String array with data lengths between control blocks
+     * @param full Full section string
+     * @return Pattern filled with data of specifed length
+     */
     private String mergeWithInput(String[] section, String full) {
         int fullIdx = 0;
 
@@ -108,6 +120,10 @@ public class Task {
         return result;
     }
 
+    /**
+     * Process next section into byte array if any
+     * @return return true if there is data left, false if none
+     */
     public Boolean nextDataPart() {
         if (!pattern.contains("<p"))
             return false;
@@ -119,8 +135,9 @@ public class Task {
         int[] point = new int[]{Integer.parseInt(temp[0]), Integer.parseInt(temp[1])};
         from = new Point(point[0], point[1]);
 
+
         switch (getSectionEnd(pattern.indexOf("<p:"), pattern.indexOf("<pm:"))) {
-            case URL:
+            case JUMP:
                 temp = getBetween(pattern, "<p:", ">").split(",");
                 point = new int[]{Integer.parseInt(temp[0]), Integer.parseInt(temp[1])};
 
@@ -129,7 +146,7 @@ public class Task {
                         (byte) (point[1] & 0xff), (byte) ((point[1] & 0x7f00) >> 8)
                 });
                 break;
-            case URL_M:
+            case JUMP_MARKED:
                 temp = getBetween(pattern, "<pm:", ">").split(",");
                 point = new int[]{Integer.parseInt(temp[0]), Integer.parseInt(temp[1]), Integer.parseInt(temp[2])};
 
@@ -146,19 +163,25 @@ public class Task {
         return true;
     }
 
-    private Block.ControlBlock getSectionEnd(int p, int pm) {
+    /**
+     * Extracts type of control block in the end of the section
+     * @param p Index of jump block
+     * @param pm Index of marked jump block
+     * @return Next nearest control block type
+     */
+    private Block.Type getSectionEnd(int p, int pm) {
         if (p == pm)
-            return Block.ControlBlock.EOF;
+            return Block.Type.EOF;
 
         if (p == -1)
-            return Block.ControlBlock.URL_M;
+            return Block.Type.JUMP_MARKED;
         if (pm == -1)
-            return Block.ControlBlock.URL;
+            return Block.Type.JUMP;
 
         if (p < pm)
-            return Block.ControlBlock.URL;
+            return Block.Type.JUMP;
 
-        return Block.ControlBlock.URL_M;
+        return Block.Type.JUMP_MARKED;
     }
 
     public Boolean getKey() {

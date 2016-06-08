@@ -1,28 +1,27 @@
 package pw.stego;
 
 /**
- * Created by LabunskyA
- * GitHub: github.com/LabunskyA
- * VK: vk.com/labunsky
+ * Block class to represent data in a comfortable way before encoding
  */
 public class Block {
-    public enum ControlBlock {EOF, URL, URL_M, INV, TRANS, NONE}
+    /**Types of blocks*/
+    public enum Type {EOF, JUMP, JUMP_MARKED, INV, TRANS, NONE}
 
-    public final ControlBlock type;
+    public final Type type;
     public final byte value;
 
     Block(byte value) {
         this.value = value;
-        type = ControlBlock.NONE;
+        type = Type.NONE;
     }
 
-    Block(ControlBlock type) {
+    Block(Type type) {
         this.type = type;
         switch (type) {
             case EOF:
                 value = 4;
                 break;
-            case URL:
+            case JUMP:
                 value = 7;
                 break;
             case INV:
@@ -31,6 +30,7 @@ public class Block {
             case TRANS:
                 value = 6;
                 break;
+
             //should not happen
             default:
             case NONE:
@@ -38,17 +38,17 @@ public class Block {
         }
     }
 
-    static ControlBlock toControl(byte[] arr, int from) {
+    static Type toControl(byte[] arr, int from) {
         if (!(arr[from] == '<' && arr[from + 2] == '>'))
-            return ControlBlock.NONE;
+            return Type.NONE;
 
         switch (arr[from + 1]) {
             case 'i':
-                return ControlBlock.INV;
+                return Type.INV;
             case 't':
-                return ControlBlock.TRANS;
+                return Type.TRANS;
             default:
-                return ControlBlock.NONE;
+                return Type.NONE;
         }
     }
 

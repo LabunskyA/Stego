@@ -7,9 +7,7 @@ import pw.stego.coders.Encoder;
 import java.io.IOException;
 
 /**
- * Created by LabunskyA
- * GitHub: github.com/LabunskyA
- * VK: vk.com/labunsky
+ * Handles tasks and provides simple interface to work with them
  */
 class Handler {
     private Encoder encoder;
@@ -17,7 +15,11 @@ class Handler {
 
     private final Task task;
 
-    Handler(Task task){
+    /**
+     * Creates suitable handler for task
+     * @param task Task to handle
+     */
+    Handler(Task task) {
         if (task.type)
             encoder = new Encoder();
         else decoder = new Decoder();
@@ -25,6 +27,10 @@ class Handler {
         this.task = task;
     }
 
+    /**
+     * Processes associated task
+     * @return Result of processing task: Boolean if task is to encode date and byte array if to decode
+     */
     Object process() {
         if (decoder != null)
             if (task.getKey())
@@ -56,6 +62,10 @@ class Handler {
         return false;
     }
 
+    /**
+     * Finishes task
+     * @return True if rewriting container is successful and false if not
+     */
     boolean writeResult() {
         try {
             task.finish();

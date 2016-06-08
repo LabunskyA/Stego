@@ -5,9 +5,7 @@ import pw.stego.Block;
 import java.awt.image.BufferedImage;
 
 /**
- * Created by LabunskyA
- * GitHub: github.com/LabunskyA
- * VK: vk.com/labunsky
+ * Class for encoding message to container
  */
 public class Encoder extends Coder{
     public int hideData(BufferedImage to, Block[] data, int from) {

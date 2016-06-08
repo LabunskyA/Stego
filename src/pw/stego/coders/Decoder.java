@@ -5,9 +5,7 @@ import pw.stego.Block;
 import java.awt.image.BufferedImage;
 
 /**
- * Created by LabunskyA
- * GitHub: github.com/LabunskyA
- * VK: vk.com/labunsky
+ * Class for decoding message from container
  */
 public class Decoder extends Coder {
     public byte[] decode(BufferedImage image, Block[] key) {
@@ -46,7 +44,7 @@ public class Decoder extends Coder {
                             j -= delta;
                         }
                         transposed = !transposed;
-                    case URL:
+                    case JUMP:
                     case EOF:
                         flag = false;
                         break;
@@ -60,7 +58,7 @@ public class Decoder extends Coder {
             if (flag)
                 result[size++] = (byte) temp;
             else switch (toBlock(part)) {
-                case URL:
+                case JUMP:
                     int tempSize;
                     if ((tempSize = extractPoint(image, j, result, size)) != -1)
                         size = tempSize;

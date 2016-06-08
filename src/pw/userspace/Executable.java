@@ -8,9 +8,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 /**
- * Created by LabunskyA
- * GitHub: github.com/LabunskyA
- * VK: vk.com/labunsky
+ * Executable class with main method and arguments processing
  */
 class Executable {
     private Handler handler;

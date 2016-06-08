@@ -3,9 +3,7 @@ package pw.stego.coders;
 import pw.stego.Block;
 
 /**
- * Created by LabunskyA
- * GitHub: github.com/LabunskyA
- * VK: vk.com/labunsky
+ * Base class for encoding and decoding
  */
 class Coder {
     public int delta = 1;
@@ -19,14 +17,14 @@ class Coder {
         return (a & 0xfffefefe) | ((data & 4) << 14) | ((data & 2) << 7) | (data & 1);
     }
 
-    Block.ControlBlock toBlock(int a) {
+    Block.Type toBlock(int a) {
         switch (a) {
-            case 4: return Block.ControlBlock.EOF;
-            case 5: return Block.ControlBlock.INV;
-            case 6: return Block.ControlBlock.TRANS;
-            case 7: return Block.ControlBlock.URL;
+            case 4: return Block.Type.EOF;
+            case 5: return Block.Type.INV;
+            case 6: return Block.Type.TRANS;
+            case 7: return Block.Type.JUMP;
         }
 
-        return Block.ControlBlock.NONE;
+        return Block.Type.NONE;
     }
 }
