@@ -8,18 +8,18 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 /**
- * Executable class with main method and arguments processing
+ * StandAlone class with main method and arguments processing
  */
-class Executable {
+class StandAlone {
     private Handler handler;
 
     public static void main(String[] args) throws IOException {
-        Executable executable = new Executable(args);
+        StandAlone standAlone = new StandAlone(args);
 
-        System.out.println("\n" + executable.getResult());
+        System.out.println("\n" + standAlone.getResult());
     }
 
-    private Executable(String[] args) throws IOException, IllegalArgumentException {
+    private StandAlone(String[] args) throws IOException, IllegalArgumentException {
         if (args.length < 3)
             throw new IllegalArgumentException();
 
@@ -35,7 +35,12 @@ class Executable {
             data = Files.readAllBytes(new File(args[2]).toPath());
         }
 
-        handler = new Handler(new Task(args[1], imageFile, pattern, data));
+        if (!args[1].equals("--encode") && !args[1].equals("--decode"))
+            throw new IllegalArgumentException();
+
+        Task.Type type = args[1].equals("--encode") ? Task.Type.ENCODE : Task.Type.DECODE;
+        handler = new Handler(new Task(type, imageFile, pattern, data));
+        System.out.println(new String(data));
     }
 
     private String getResult() {

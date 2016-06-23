@@ -11,7 +11,8 @@ import java.io.IOException;
  * Methods designed to work with data sections.
  */
 public class Task {
-    public final boolean type;
+    public final Type type;
+    public enum Type {ENCODE, DECODE}
 
     public BufferedImage image;
 
@@ -25,13 +26,13 @@ public class Task {
     private final String input;
     private final File container;
 
-    public Task(String type, File container, String pattern, byte[] input) throws IOException {
-        this.type = type.equals("--encode") || !type.equals("--decode");
+    public Task(Type type, File container, String pattern, byte[] input) throws IOException {
+        this.type = type;
 
         image = readBI(container);
         this.container = container;
 
-        if (this.type)
+        if (this.type == Type.ENCODE)
             this.pattern = pattern;
         this.input = new String(input);
     }

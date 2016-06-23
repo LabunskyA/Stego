@@ -20,7 +20,7 @@ class Handler {
      * @param task Task to handle
      */
     Handler(Task task) {
-        if (task.type)
+        if (task.type == Task.Type.ENCODE)
             encoder = new Encoder();
         else decoder = new Decoder();
 
