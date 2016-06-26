@@ -24,7 +24,7 @@ public class Task {
 
     private String pattern;
     private final String input;
-    private final File container;
+    public final File container;
 
     public Task(Type type, File container, String pattern, byte[] input) throws IOException {
         this.type = type;

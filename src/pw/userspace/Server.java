@@ -53,14 +53,21 @@ public class Server {
                 }
 
                 handler = new Handler(toProcess.getKey());
+                byte out;
 
-                handler.process();
-                handler.writeResult();
+                try {
+                    handler.process();
+                    handler.writeResult();
 
-                toProcess.getValue().getOutputStream().write(1);
+                    out = 1;
+                } catch (Exception e) {
+                    out = 0;
+                }
+
+                toProcess.getValue().getOutputStream().write(out);
                 toProcess.getValue().close();
 
-                System.out.println("End of service #" + id++);
+                System.out.println("End of service #" + id++ + "\n");
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
@@ -73,7 +80,7 @@ public class Server {
             Socket client = soc.accept();
             DataInputStream inStream = new DataInputStream(client.getInputStream());
 
-            System.out.println("Start of service #" + id + "\n");
+            System.out.println("Start of service #" + id);
 
             String message = getPath(inStream).toString();
             Type type = inStream.readByte() == 1 ? Type.ENCODE : Type.DECODE;
