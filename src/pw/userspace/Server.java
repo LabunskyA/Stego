@@ -13,12 +13,16 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.LinkedList;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 class Server {
     private static int id = 0;
     private ServerSocket soc;
+    private final Set<File> containers;
     private final Queue<Pair<Task, Socket>> tasks;
 
     private Server() throws IOException {
@@ -39,7 +43,9 @@ class Server {
         }
 
         tasks = new ConcurrentLinkedQueue<>();
+        containers = new ConcurrentSkipListSet<>();
 
+        //Task processing thread
         new Thread(() -> {
             Pair<Task, Socket> toProcess;
             Handler handler;
@@ -75,6 +81,15 @@ class Server {
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
+        }).start();
+
+        //Files deleter thread
+        new Thread(() -> {
+            //noinspection InfiniteLoopStatement
+            while (true) for (File file : new LinkedList<>(containers))
+                if (System.currentTimeMillis() > file.lastModified() + 1800)
+                    if (file.delete())
+                        containers.remove(file);
         }).start();
     }
 
