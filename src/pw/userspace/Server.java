@@ -1,21 +1,22 @@
 package pw.userspace;
 
 import javafx.util.Pair;
+import pw.stego.Patterns;
 import pw.stego.Task;
-import pw.stego.Task.Type;
 
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class Server {
+class Server {
     private static int id = 0;
     private ServerSocket soc;
     private final Queue<Pair<Task, Socket>> tasks;
@@ -52,6 +53,8 @@ public class Server {
                     toProcess = tasks.poll();
                 }
 
+                System.out.println("Start of service #" + id);
+
                 handler = new Handler(toProcess.getKey());
                 byte out;
 
@@ -61,6 +64,7 @@ public class Server {
 
                     out = 1;
                 } catch (Exception e) {
+                    e.printStackTrace();
                     out = 0;
                 }
 
@@ -80,22 +84,44 @@ public class Server {
             Socket client = soc.accept();
             DataInputStream inStream = new DataInputStream(client.getInputStream());
 
-            System.out.println("Start of service #" + id);
+            Task toPush;
+            String messagePath = getPath(inStream).toString();
+            byte[] message = Files.readAllBytes(Paths.get(messagePath));
 
-            String message = getPath(inStream).toString();
-            Type type = inStream.readByte() == 1 ? Type.ENCODE : Type.DECODE;
-
-            String container = message + "_c";
-            String pattern = message + (type == Type.ENCODE ? "_p" : "");
+            byte taskType = inStream.readByte();
+            if (taskType == 0)
+                toPush = new Task(new File(messagePath + "_c"), message);
+            else switch (taskType) {
+                case 1:
+                    toPush = new Task(
+                            new File(messagePath + "_c"),
+                            message, Files.readAllBytes(Paths.get(messagePath + "_k")),
+                            new String(Files.readAllBytes(Paths.get(messagePath + "_p")), StandardCharsets.ISO_8859_1));
+                    break;
+                case 2:
+                    toPush = new Task(
+                            new File(messagePath + "_c"),
+                            message, Files.readAllBytes(Paths.get(messagePath + "_k")),
+                            Patterns.Type.SIMPLE);
+                    break;
+                case 3:
+                    toPush = new Task(
+                            new File(messagePath + "_c"),
+                            message, Files.readAllBytes(Paths.get(messagePath + "_k")),
+                            Patterns.Type.CUMULATIVE_DISTRIBUTED);
+                    break;
+                case 4:
+                    toPush = new Task(
+                            new File(messagePath + "_c"),
+                            message, Files.readAllBytes(Paths.get(messagePath + "_k")),
+                            Patterns.Type.EVENLY_DISTRIBUTED);
+                    break;
+                default:
+                    toPush = null;
+            }
 
             synchronized(tasks) {
-                tasks.add(new Pair<>(
-                        new Task(type, new File(container),
-                        new String(Files.readAllBytes(Paths.get(pattern))),
-                        Files.readAllBytes(Paths.get(message))),
-                        client
-                ));
-
+                tasks.add(new Pair<>(toPush, client));
                 tasks.notify();
             }
         }
