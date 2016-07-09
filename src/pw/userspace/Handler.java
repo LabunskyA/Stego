@@ -38,30 +38,10 @@ class Handler {
     Object process() {
         if (decoder != null)
             if (task.getKey())
-                return result = decoder.decode(task.image, task.data);
+                return result = decoder.decode(task.getImage(), task.getData());
 
-        if (encoder != null) {
-            int length = task.image.getWidth();
-            int i = 0;
-
-            while (task.nextDataPart()) {
-                i = encoder.hideData(task.image, task.data, task.from.y * length + task.from.x);
-
-                if (task.meta != null) {
-                    task.image.setRGB(i % length, i / length, (task.image.getRGB(i % length, i / length) & 0xfffffefe) |
-                            0x10101);
-
-                    encoder.hideData(task.image, task.meta, i + encoder.delta);
-                }
-            }
-
-            System.out.println("Encoding from x = " + i % length + " y = " + i / length);
-            task.image.setRGB(i % length, i / length, (task.image.getRGB(i % length, i / length) & 0xfffffefe) |
-                                                                                                            0x10000);
-            System.out.println(4);
-
-            return result = true;
-        }
+        if (encoder != null)
+            return result = encoder.encode(task);
 
         return result = false;
     }
