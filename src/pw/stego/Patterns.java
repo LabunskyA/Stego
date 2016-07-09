@@ -8,15 +8,17 @@ import java.util.Random;
  * GitHub: github.com/LabunskyA
  * VK: vk.com/labunsky
  */
-class Patterns {
-    enum Type{SIMPLE, LINEARLY_DISTRIBUTED}
+public class Patterns {
+    public enum Type {SIMPLE, CUMULATIVE_DISTRIBUTED, EVENLY_DISTRIBUTED}
 
     static String createPattern(Type type, int messageLength, Point imageSize) {
         switch (type) {
             case SIMPLE:
                 return newSimplePattern(messageLength, imageSize);
-            case LINEARLY_DISTRIBUTED:
-                return newLinearlyDistributedPattern(messageLength, imageSize);
+            case CUMULATIVE_DISTRIBUTED:
+                return newCumulativeDistributedPattern(messageLength, imageSize);
+            case EVENLY_DISTRIBUTED:
+                return newEvenlyDistributedPatter(messageLength, imageSize);
             default:
                 return null;
         }
@@ -27,7 +29,7 @@ class Patterns {
         return getJump(new Point(start % imageSize.x, start / imageSize.x)) + messageLength;
     }
 
-    private static String newLinearlyDistributedPattern(int messageLength, Point imageSize) {
+    private static String newCumulativeDistributedPattern(int messageLength, Point imageSize) {
         final StringBuilder pattern = new StringBuilder();
         final Random r = new Random();
 
@@ -60,6 +62,10 @@ class Patterns {
         }
         
         return pattern.toString();
+    }
+
+    private static String newEvenlyDistributedPatter(int messageLength, Point imageSize) {
+        return "";
     }
 
     private static String getJump(Point to) {
