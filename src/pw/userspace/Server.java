@@ -123,13 +123,13 @@ class Server {
                     toPush = new Task(
                             new File(messagePath + "_c"),
                             message, Files.readAllBytes(Paths.get(messagePath + "_k")),
-                            Patterns.Type.CUMULATIVE_DISTRIBUTED);
+                            Patterns.Type.ILCD);
                     break;
                 case 4:
                     toPush = new Task(
                             new File(messagePath + "_c"),
                             message, Files.readAllBytes(Paths.get(messagePath + "_k")),
-                            Patterns.Type.EVENLY_DISTRIBUTED);
+                            Patterns.Type.ILED);
                     break;
                 default:
                     toPush = null;
