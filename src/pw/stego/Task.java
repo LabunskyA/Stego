@@ -34,15 +34,12 @@ public class Task {
         this.container = container;
         this.input = new String(key, StandardCharsets.ISO_8859_1) + new String(input, StandardCharsets.ISO_8859_1);
 
-        if (image != null) try {
-            this.pattern = Patterns.createPattern(
-                    patternType,
-                    this.input.length(),
-                    new Point(image.getWidth(), image.getHeight())
-            );
-        } catch (Exception e) {
-            this.pattern = null;
-        } else this.pattern = null;
+        this.pattern = null;
+        this.pattern = Patterns.createPattern(
+                patternType,
+                this.input.length(),
+                new Point(image.getWidth(), image.getHeight())
+        );
 
         System.out.println(this.pattern);
     }
@@ -53,16 +50,7 @@ public class Task {
         this.image = readBI(container);
         this.container = container;
         this.input = new String(key, StandardCharsets.ISO_8859_1) + new String(input, StandardCharsets.ISO_8859_1);
-
-        if (pattern == null && image != null) try {
-            this.pattern = Patterns.createPattern(
-                    Patterns.Type.SIMPLE,
-                    this.input.length(),
-                    new Point(image.getWidth(), image.getHeight())
-            );
-        } catch (Exception e) {
-            this.pattern = null;
-        } else this.pattern = pattern;
+        this.pattern = pattern;
 
         System.out.println(this.pattern);
     }
