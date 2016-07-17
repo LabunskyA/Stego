@@ -39,6 +39,9 @@ public class Block {
     }
 
     static Type toControl(byte[] arr, int from) {
+        if (from + 2 <= arr.length)
+            return Type.NONE;
+
         if (!(arr[from] == '<' && arr[from + 2] == '>'))
             return Type.NONE;
 
