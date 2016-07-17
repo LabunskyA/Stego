@@ -25,7 +25,11 @@ public class Patterns {
     }
 
     private static String newSimplePattern(int messageLength, Point imageSize) {
-        int start = new Random().nextInt(imageSize.x * imageSize.y - messageLength * 4);
+        int empty = imageSize.x * imageSize.y - messageLength * 4;
+        if (empty <= 0)
+            return null;
+
+        int start = new Random().nextInt(empty);
         return getJump(new Point(start % imageSize.x, start / imageSize.x)) + messageLength;
     }
 
