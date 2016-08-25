@@ -5,40 +5,74 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Class for whole input data with associated container image.
  * Methods designed to work with data sections.
  */
 public class Task {
-    public final Type type;
     public enum Type {ENCODE, DECODE}
+    public final Type type;
 
-    public BufferedImage image;
+    private BufferedImage image;
 
-    public Point from;
+    private Point from;
     private int inputIdx = 0;
 
-    public Block[] data;
-    public Block[] meta;
+    private Block[] data;
+    private Block[] meta;
 
     private String pattern;
     private final String input;
-    private final File container;
+    public final File container;
 
-    public Task(Type type, File container, String pattern, byte[] input) throws IOException {
-        this.type = type;
+    public Task(File container, byte[] input, byte[] key, Patterns.Type patternType) {
+        type = Type.ENCODE;
 
-        image = readBI(container);
+        this.image = readBI(container);
         this.container = container;
+        this.input = new String(key, StandardCharsets.ISO_8859_1) + new String(input, StandardCharsets.ISO_8859_1);
 
-        if (this.type == Type.ENCODE)
-            this.pattern = pattern;
-        this.input = new String(input);
+        this.pattern = null;
+        this.pattern = Patterns.createPattern(
+                patternType,
+                this.input.length(),
+                new Point(image.getWidth(), image.getHeight())
+        );
+
+        System.out.println(this.pattern);
     }
 
-    private BufferedImage readBI(File file) throws IOException {
-        BufferedImage original = ImageIO.read(file);
+    public Task(File container, byte[] input, byte[] key, String pattern) {
+        type = Type.ENCODE;
+
+        this.image = readBI(container);
+        this.container = container;
+        this.input = new String(key, StandardCharsets.ISO_8859_1) + new String(input, StandardCharsets.ISO_8859_1);
+        this.pattern = pattern;
+
+        System.out.println(this.pattern);
+    }
+
+    public Task(File container, byte[] key) {
+        this.type = Type.DECODE;
+
+        image = readBI(container);
+
+        this.container = container;
+        this.input = new String(key, StandardCharsets.ISO_8859_1);
+    }
+
+    private static BufferedImage readBI(File file) {
+        BufferedImage original;
+
+        try {
+            original = ImageIO.read(file);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
 
         BufferedImage image = new BufferedImage(original.getWidth(), original.getHeight(), BufferedImage.TYPE_INT_RGB);
         image.getGraphics().drawImage(original, 0, 0, null);
@@ -79,7 +113,7 @@ public class Task {
                     dataLen += Integer.parseInt(partLength) * 4;
 
             result = new Block[dataLen];
-            data = mergeWithInput(section, str).getBytes();
+            data = mergeWithInput(section, str).getBytes(StandardCharsets.ISO_8859_1);
         } else return null;
 
         for (int i = 0, j = 0; i < data.length; i++)
@@ -136,7 +170,6 @@ public class Task {
         int[] point = new int[]{Integer.parseInt(temp[0]), Integer.parseInt(temp[1])};
         from = new Point(point[0], point[1]);
 
-
         switch (getSectionEnd(pattern.indexOf("<p:"), pattern.indexOf("<pm:"))) {
             case JUMP:
                 temp = getBetween(pattern, "<p:", ">").split(",");
@@ -189,7 +222,7 @@ public class Task {
         if (input.length() == 0)
             return false;
 
-        data = toBlocks(input.getBytes());
+        data = toBlocks(input.getBytes(StandardCharsets.ISO_8859_1));
         return true;
     }
 
@@ -215,5 +248,18 @@ public class Task {
             return cutFrom(string, from);
 
         return string;
+    }
+
+    public BufferedImage getImage() {
+        return image;
+    }
+    public Point getFrom() {
+        return from;
+    }
+    public Block[] getData() {
+        return data;
+    }
+    public Block[] getMeta() {
+        return meta;
     }
 }

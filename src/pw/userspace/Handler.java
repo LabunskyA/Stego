@@ -5,11 +5,15 @@ import pw.stego.coders.Decoder;
 import pw.stego.coders.Encoder;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 /**
  * Handles tasks and provides simple interface to work with them
  */
 class Handler {
+    private Object result;
+
     private Encoder encoder;
     private Decoder decoder;
 
@@ -34,32 +38,12 @@ class Handler {
     Object process() {
         if (decoder != null)
             if (task.getKey())
-                return decoder.decode(task.image, task.data);
+                return result = decoder.decode(task.getImage(), task.getData());
 
-        if (encoder != null) {
-            int length = task.image.getWidth();
-            int i = 0;
+        if (encoder != null)
+            return result = encoder.encode(task);
 
-            while (task.nextDataPart()) {
-                i = encoder.hideData(task.image, task.data, task.from.y * length + task.from.x);
-
-                if (task.meta != null) {
-                    task.image.setRGB(i % length, i / length, (task.image.getRGB(i % length, i / length) & 0xfffffefe) |
-                            0x10101);
-
-                    encoder.hideData(task.image, task.meta, i + encoder.delta);
-                }
-            }
-
-            System.out.println("Encoding from x = " + i % length + " y = " + i / length);
-            task.image.setRGB(i % length, i / length, (task.image.getRGB(i % length, i / length) & 0xfffffefe) |
-                                                                                                            0x10000);
-            System.out.println(4);
-
-            return true;
-        }
-
-        return false;
+        return result = false;
     }
 
     /**
@@ -67,8 +51,19 @@ class Handler {
      * @return True if rewriting container is successful and false if not
      */
     boolean writeResult() {
-        try {
+        if (task.type == Task.Type.ENCODE) try {
             task.finish();
+            return true;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+
+        try {
+            String path = task.container.getAbsolutePath();
+            path = path.substring(0, path.length() - 2) + "_r";
+            
+            Files.write(Paths.get(path), (byte[]) result);
         } catch (IOException e) {
             e.printStackTrace();
             return false;

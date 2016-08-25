@@ -6,7 +6,7 @@ import pw.stego.Block;
  * Base class for encoding and decoding
  */
 class Coder {
-    public int delta = 1;
+    int delta = 1;
     boolean transposed = false;
 
     int toDecoded(int a) {

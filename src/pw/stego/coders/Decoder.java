@@ -52,7 +52,7 @@ public class Decoder extends Coder {
                         temp = temp | ((part & 3) << shift);
                 }
 
-                System.out.print(part);
+//                System.out.print(part);
             }
 
             if (flag)
@@ -76,14 +76,14 @@ public class Decoder extends Coder {
         int length = image.getWidth(), part;
         int p[] = new int[2];
 
-        System.out.println();
-        System.out.println("Extracting from x = " + j % length + " y = " + j / length);
+//        System.out.println();
+//        System.out.println("Extracting from x = " + j % length + " y = " + j / length);
 
         for (int shift = 0; shift < 31; j += delta, shift += 2) {
             part = toDecoded(image.getRGB(j % length, j / length));
             p[shift / 16] = p[shift / 16] | ((part & 3) << (shift % 16));
 
-            System.out.print(part);
+//            System.out.print(part);
         }
 
         if ((p[1] & 0x8000) != 0)
@@ -91,7 +91,7 @@ public class Decoder extends Coder {
                 return -1;
         p[1] &= 0x7fff;
 
-        System.out.println();
+//        System.out.println();
 
         return decode(image, result, p[1] * length + p[0], size);
     }
