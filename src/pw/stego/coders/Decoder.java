@@ -1,6 +1,7 @@
 package pw.stego.coders;
 
 import pw.stego.Block;
+import pw.stego.task.DecodeTask;
 
 import java.awt.image.BufferedImage;
 
@@ -8,15 +9,21 @@ import java.awt.image.BufferedImage;
  * Class for decoding message from container
  */
 public class Decoder extends Coder {
-    public byte[] decode(BufferedImage image, Block[] key) {
+    public byte[] decode(DecodeTask task) {
+        BufferedImage image = task.getImage();
+        Block[] key = task.getKey();
+
         int length = image.getWidth();
 
         byte[] result = new byte[image.getHeight() * length];
 
-        int from = find(image, key) - key.length;
+        int from = find(image, key);
+        if (from == -1)
+            return null;
+
         int size = decode(image, result, from, 0);
 
-        System.out.println();
+//        System.out.println();
 
         System.arraycopy(result, 0, (result = new byte[size]), 0, size);
         return result;
@@ -24,7 +31,7 @@ public class Decoder extends Coder {
 
     private int decode(BufferedImage image, byte[] result, int from, int size) {
         int length = image.getWidth();
-        System.out.println("Extracting from x = " + from % length + " y = " + from / length);
+//        System.out.println("Extracting from x = " + from % length + " y = " + from / length);
 
         for (int j = from, temp = 0, part = 0;; temp = 0) {
             boolean flag = true;
@@ -126,5 +133,9 @@ public class Decoder extends Coder {
                     return what.length + i;
 
         return -1;
+    }
+
+    public boolean checkKey(byte[] key, BufferedImage container) {
+        return find(container, Block.toBlocks(key)) != -1;
     }
 }

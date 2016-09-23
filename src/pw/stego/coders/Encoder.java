@@ -1,16 +1,16 @@
 package pw.stego.coders;
 
 import pw.stego.Block;
-import pw.stego.Task;
+import pw.stego.task.EncodeTask;
 
 import java.awt.image.BufferedImage;
 
 /**
  * Class for encoding message to container
  */
-public class Encoder extends Coder{
+public class Encoder extends Coder {
     private int hideData(BufferedImage to, Block[] data, int from) {
-        System.out.println("Encoding from x = " + from % to.getWidth() + " y = " + from / to.getWidth());
+//        System.out.println("Encoding from x = " + from % to.getWidth() + " y = " + from / to.getWidth());
 
         int length = to.getWidth();
 
@@ -43,7 +43,7 @@ public class Encoder extends Coder{
         return j;
     }
 
-    public boolean encode(Task task) {
+    public boolean encode(EncodeTask task) {
         BufferedImage image = task.getImage();
 
         int length = image.getWidth();
