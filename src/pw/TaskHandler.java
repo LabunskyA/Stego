@@ -1,8 +1,10 @@
-package pw.userspace;
+package pw;
 
-import pw.stego.Task;
 import pw.stego.coders.Decoder;
 import pw.stego.coders.Encoder;
+import pw.stego.task.DecodeTask;
+import pw.stego.task.EncodeTask;
+import pw.stego.task.Task;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -11,7 +13,7 @@ import java.nio.file.Paths;
 /**
  * Handles tasks and provides simple interface to work with them
  */
-class Handler {
+public class TaskHandler {
     private Object result;
 
     private Encoder encoder;
@@ -23,8 +25,8 @@ class Handler {
      * Creates suitable handler for task
      * @param task Task to handle
      */
-    Handler(Task task) {
-        if (task.type == Task.Type.ENCODE)
+    public TaskHandler(Task task) {
+        if (task instanceof EncodeTask)
             encoder = new Encoder();
         else decoder = new Decoder();
 
@@ -35,34 +37,34 @@ class Handler {
      * Processes associated task
      * @return Result of processing task: Boolean if task is to encode date and byte array if to decode
      */
-    Object process() {
+    public Object process() {
         if (decoder != null)
-            if (task.getKey())
-                return result = decoder.decode(task.getImage(), task.getData());
+            return result = decoder.decode((DecodeTask) task);
 
         if (encoder != null)
-            return result = encoder.encode(task);
+            return result = encoder.encode((EncodeTask) task);
 
         return result = false;
     }
 
     /**
-     * Finishes task
+     * Finishes task with writing changes to filesystem
      * @return True if rewriting container is successful and false if not
      */
-    boolean writeResult() {
-        if (task.type == Task.Type.ENCODE) try {
+    public boolean writeResult() {
+        if (task instanceof EncodeTask) try {
             task.finish();
+
             return true;
         } catch (IOException e) {
             e.printStackTrace();
             return false;
         }
 
+        String path = task.getContainer().getAbsolutePath();
+        path = path.substring(0, path.length() - 4) + ".dec";
+
         try {
-            String path = task.container.getAbsolutePath();
-            path = path.substring(0, path.length() - 2) + "_r";
-            
             Files.write(Paths.get(path), (byte[]) result);
         } catch (IOException e) {
             e.printStackTrace();

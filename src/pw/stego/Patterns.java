@@ -11,7 +11,7 @@ import java.util.Random;
 public class Patterns {
     public enum Type {SIMPLE, ILCD, ILED}
 
-    static String createPattern(Type type, int messageLength, Point imageSize) {
+    public static String createPattern(Type type, int messageLength, Point imageSize) {
         switch (type) {
             case SIMPLE:
                 return newSimplePattern(messageLength, imageSize);
