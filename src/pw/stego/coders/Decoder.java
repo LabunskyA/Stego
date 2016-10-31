@@ -66,9 +66,9 @@ public class Decoder extends Coder {
                 result[size++] = (byte) temp;
             else switch (toBlock(part)) {
                 case JUMP:
-                    int tempSize;
-                    if ((tempSize = extractPoint(image, j, result, size)) != -1)
-                        size = tempSize;
+                    int tSize = extractPoint(image, j, result, size);
+                    if (tSize != -1)
+                        size = tSize;
                     else {
                         j += delta * 4;
                         break;
@@ -105,6 +105,7 @@ public class Decoder extends Coder {
 
     private boolean processMark(BufferedImage image, int j) {
         int length = image.getWidth(), part, mark = 0;
+
         for (int shift = 0; shift < 7; j += delta, shift += 2) {
             part = toDecoded(image.getRGB(j % length, j / length));
             mark = mark | (part << shift);
@@ -112,8 +113,8 @@ public class Decoder extends Coder {
 
         if (mark == 0)
             return false;
-
         mark--;
+
         for (int shift = 6; shift > -1; j -= delta, shift -= 2) {
             int x = j % length, y = j / length;
             image.setRGB(x, y, toEncoded(image.getRGB(x, y), (byte) (mark >> shift & 3)));

@@ -13,46 +13,54 @@ import java.nio.charset.StandardCharsets;
  * Created by lina on 14.09.16.
  */
 public class EncodeTask extends Task {
+    private final String input;
     private String pattern;
-    private final String strInput;
 
     private Block[] data;
     private Block[] meta;
 
     private Point from;
 
+    /**
+     * Constructor without defined container, but with defined container type
+     * @param patternType pattern distribution type from Patterns.Type enum
+     */
     public EncodeTask(File container, byte[] message, byte[] key, Patterns.Type patternType) {
         super(container, readBI(container));
         type = Type.ENCODE;
 
-        strInput = new String(key, StandardCharsets.ISO_8859_1) + new String(message, StandardCharsets.ISO_8859_1);
+        input = new String(key, StandardCharsets.ISO_8859_1) + new String(message, StandardCharsets.ISO_8859_1);
         pattern = Patterns.createPattern(
                 patternType,
-                strInput.length(),
+                input.length(),
                 new Point(getImage().getWidth(), getImage().getHeight())
         );
 
         System.out.println(this.pattern);
     }
 
-    public EncodeTask(File container, byte[] input, byte[] key, String pattern) {
+    /**
+     * Constructor with pre-defined container
+     * @param pattern in String
+     */
+    public EncodeTask(File container, byte[] message, byte[] key, String pattern) {
         super(container, readBI(container));
         type = Type.ENCODE;
 
-        strInput = new String(key, StandardCharsets.ISO_8859_1) + new String(input, StandardCharsets.ISO_8859_1);
+        this.input = new String(key, StandardCharsets.ISO_8859_1) + new String(message, StandardCharsets.ISO_8859_1);
         this.pattern = pattern;
     }
 
     /**
      * Process next section into byte array if any
-     * @return return true if there is data left, false if none
+     * @return true if there is data left, false if none
      */
     public Boolean nextDataPart() {
         if (!pattern.contains("<p"))
             return false;
 
         pattern = FString.cutFrom(pattern, "<p");
-        data = Block.toBlocks(FString.getBetween(pattern, ">", "<p"), strInput);
+        data = Block.toBlocks(FString.getBetween(pattern, ">", "<p"), input);
 
         String[] temp = FString.getBetween(pattern, ":", ">").split(",");
         int[] point = new int[]{Integer.parseInt(temp[0]), Integer.parseInt(temp[1])};

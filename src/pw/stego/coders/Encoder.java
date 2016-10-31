@@ -54,16 +54,13 @@ public class Encoder extends Coder {
                 i = hideData(image, task.getData(), task.getFrom().y * length + task.getFrom().x);
 
                 if (task.getMeta() != null) {
-                    image.setRGB(i % length, i / length, (image.getRGB(i % length, i / length) & 0xfffffefe) |
-                            0x10101);
-
+                    image.setRGB(i % length, i / length, (image.getRGB(i % length, i / length) & 0xfffffefe) | 0x10101);
                     hideData(image, task.getMeta(), i + delta);
                 }
             }
 
 //            System.out.println("Encoding from x = " + i % length + " y = " + i / length);
-            image.setRGB(i % length, i / length, (image.getRGB(i % length, i / length) & 0xfffffefe) |
-                    0x10000);
+            image.setRGB(i % length, i / length, (image.getRGB(i % length, i / length) & 0xfffffefe) | 0x10000);
 //            System.out.println(4);
         } catch (ArrayIndexOutOfBoundsException e) {
             e.printStackTrace();

@@ -6,7 +6,7 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Class for whole fullBody data with associated container image.
+ * Class for whole data with associated container
  * Methods designed to work with data sections.
  */
 public class Task {
