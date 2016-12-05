@@ -9,15 +9,18 @@ import java.awt.image.BufferedImage;
  * Class for encoding message to container
  */
 public class Encoder extends Coder {
-    private int hideData(BufferedImage to, Block[] data, int from) {
-//        System.out.println("Encoding from x = " + from % to.getWidth() + " y = " + from / to.getWidth());
-
+    private int encode(BufferedImage to, int from, Block[] data) {
         int length = to.getWidth();
 
         int i, j;
         for (i = 0, j = from; i < data.length; i++) {
-            to.setRGB(j % length, j / length, toEncoded(to.getRGB(j % length, j / length), data[i].value));
-//            System.out.print(toDecoded(to.getRGB(j % length, j / length)));
+            to.setRGB(
+                    j % length, j / length,
+                    toEncoded(
+                            to.getRGB(j % length, j / length),
+                            data[i].value
+                    )
+            );
 
             switch (data[i].type) {
                 case TRANS:
@@ -28,6 +31,7 @@ public class Encoder extends Coder {
                         j += delta;
                         delta *= length;
                     }
+
                     transposed = !transposed;
                     break;
 
@@ -37,8 +41,6 @@ public class Encoder extends Coder {
                     j += delta;
             }
         }
-
-//        System.out.println();
 
         return j;
     }
@@ -51,17 +53,22 @@ public class Encoder extends Coder {
 
         try {
             while (task.nextDataPart()) {
-                i = hideData(image, task.getData(), task.getFrom().y * length + task.getFrom().x);
+                i = encode(image, task.fromPoint().y * length + task.fromPoint().x, task.getData());
 
                 if (task.getMeta() != null) {
-                    image.setRGB(i % length, i / length, (image.getRGB(i % length, i / length) & 0xfffffefe) | 0x10101);
-                    hideData(image, task.getMeta(), i + delta);
+                    image.setRGB(
+                            i % length, i / length,
+                            (image.getRGB(i % length, i / length) & 0xfffffefe) | 0x10101
+                    );
+
+                    encode(image, i + delta, task.getMeta());
                 }
             }
 
-//            System.out.println("Encoding from x = " + i % length + " y = " + i / length);
-            image.setRGB(i % length, i / length, (image.getRGB(i % length, i / length) & 0xfffffefe) | 0x10000);
-//            System.out.println(4);
+            image.setRGB(
+                    i % length, i / length,
+                    (image.getRGB(i % length, i / length) & 0xfffffefe) | 0x10000
+            );
         } catch (ArrayIndexOutOfBoundsException e) {
             e.printStackTrace();
             return false;
