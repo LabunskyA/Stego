@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
  * Created by lina on 14.09.16.
  */
 public class EncodeTask extends Task {
-    private final String input;
+    private String input;
     private String pattern;
 
     private Block[] data;
@@ -51,6 +51,14 @@ public class EncodeTask extends Task {
         this.pattern = pattern;
     }
 
+    private int countBlocks(String[] parts) {
+        int blocks = parts.length - 1;
+        for (String part : parts)
+            if (part.length() > 0)
+                blocks += Integer.parseInt(part) * 4;
+        return blocks;
+    }
+
     /**
      * Process next section into byte array if any
      * @return true if there is data left, false if none
@@ -60,32 +68,45 @@ public class EncodeTask extends Task {
             return false;
 
         pattern = FString.cutFrom(pattern, "<p");
-        data = Block.toBlocks(FString.getBetween(pattern, ">", "<p"), input);
+        String patternPart = FString.getBetween(pattern, ">", "<p");
 
-        String[] temp = FString.getBetween(pattern, ":", ">").split(",");
-        int[] point = new int[]{Integer.parseInt(temp[0]), Integer.parseInt(temp[1])};
-        from = new Point(point[0], point[1]);
+        String[] parts = patternPart.split("<(?:i|t)>");
+        int blocks = countBlocks(parts);
+
+        String section = FString.cutTo(input, (blocks - (parts.length - 1)) / 4);
+        input = FString.cutFrom(input, (blocks - (parts.length - 1)) / 4);
+
+        data = Block.toBlocks(blocks, patternPart, parts, section);
+
+        String[] coords = FString.getBetween(pattern, ":", ">").split(",");
+        from = new Point(Integer.parseInt(coords[0]), Integer.parseInt(coords[1]));
 
         switch (Block.getSectionEnd(pattern.indexOf("<p:"), pattern.indexOf("<pm:"))) {
             case JUMP:
-                temp = FString.getBetween(pattern, "<p:", ">").split(",");
-                point = new int[]{Integer.parseInt(temp[0]), Integer.parseInt(temp[1])};
+                coords = FString.getBetween(pattern, "<p:", ">").split(",");
+                int[] point = new int[]{
+                        Integer.parseInt(coords[0]), Integer.parseInt(coords[1])
+                };
 
                 meta = Block.toBlocks(new byte[] {
                         (byte) (point[0] & 0xff), (byte) ((point[0] & 0xff00) >> 8),
                         (byte) (point[1] & 0xff), (byte) ((point[1] & 0x7f00) >> 8)
                 });
                 break;
+
             case JUMP_MARKED:
-                temp = FString.getBetween(pattern, "<pm:", ">").split(",");
-                point = new int[]{Integer.parseInt(temp[0]), Integer.parseInt(temp[1]), Integer.parseInt(temp[2])};
+                coords = FString.getBetween(pattern, "<pm:", ">").split(",");
+                int[] markedPoint = new int[]{
+                        Integer.parseInt(coords[0]), Integer.parseInt(coords[1]), Integer.parseInt(coords[2])
+                };
 
                 meta = Block.toBlocks(new byte[] {
-                        (byte) (point[0] & 0xff), (byte) ((point[0] & 0xff00) >> 8),
-                        (byte) (point[1] & 0xff), (byte) ((point[1] & 0xff00 | 0x8000) >> 8),
-                        (byte) (point[2]  & 0xff)
+                        (byte) (markedPoint[0] & 0xff), (byte) ((markedPoint[0] & 0xff00) >> 8),
+                        (byte) (markedPoint[1] & 0xff), (byte) ((markedPoint[1] & 0xff00 | 0x8000) >> 8),
+                        (byte) (markedPoint[2]  & 0xff)
                 });
                 break;
+
             default:
                 meta = null;
         }
@@ -101,7 +122,7 @@ public class EncodeTask extends Task {
         return meta;
     }
 
-    public Point getFrom() {
+    public Point fromPoint() {
         return from;
     }
 }

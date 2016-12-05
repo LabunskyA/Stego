@@ -6,11 +6,19 @@ package pw.util;
  */
 @SuppressWarnings("WeakerAccess")
 public class FString {
+    public static String cutFrom(String string, int pos) {
+        return string.substring(pos);
+    }
+
     public static String cutFrom(String string, String trigger) {
         if (string.contains(trigger))
             return string.substring(string.indexOf(trigger) + trigger.length());
 
         return string;
+    }
+
+    public static String cutTo(String string, int pos) {
+        return string.substring(0, pos);
     }
 
     public static String cutTo(String string, String trigger) {
