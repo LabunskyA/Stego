@@ -2,6 +2,7 @@ package pw.stego.coders;
 
 import pw.stego.Block;
 import pw.stego.task.EncodeTask;
+import pw.stego.task.Task;
 
 import java.awt.image.BufferedImage;
 
@@ -9,27 +10,33 @@ import java.awt.image.BufferedImage;
  * Class for encoding message to container
  */
 public class Encoder extends Coder {
-    private int encode(BufferedImage to, int from, Block[] data) {
-        int length = to.getWidth();
+    /**
+     * @param image as container
+     * @param from point to start encoding
+     * @param data to encode
+     * @return index of first point after last encoded block
+     */
+    private int encode(BufferedImage image, int from, Block[] data) {
+        int length = image.getWidth();
 
-        int i, j;
-        for (i = 0, j = from; i < data.length; i++) {
-            to.setRGB(
-                    j % length, j / length,
+        int cursor = from;
+        for (int i = 0; i < data.length; i++, cursor += delta) {
+            image.setRGB(
+                    cursor % length, cursor / length,
                     toEncoded(
-                            to.getRGB(j % length, j / length),
+                            image.getRGB(cursor % length, cursor / length),
                             data[i].value
                     )
             );
 
             switch (data[i].type) {
                 case TRANS:
-                    if (transposed) {
+                    if (transposed)
                         delta /= length;
-                        j += delta;
-                    } else {
-                        j += delta;
+                    else {
+                        cursor += delta;
                         delta *= length;
+                        cursor -= delta;
                     }
 
                     transposed = !transposed;
@@ -37,15 +44,22 @@ public class Encoder extends Coder {
 
                 case INV:
                     delta *= -1;
-                default:
-                    j += delta;
             }
         }
 
-        return j;
+        return cursor;
     }
 
-    public boolean encode(EncodeTask task) {
+    /**
+     * @param encodeTask to process
+     * @return true on successfull encoding, false on error
+     * @throws WrongTaskException on wrong task argument type
+     */
+    public boolean encode(Task encodeTask) throws WrongTaskException {
+        if (!(encodeTask instanceof EncodeTask))
+            throw new WrongTaskException();
+        EncodeTask task = (EncodeTask) encodeTask;
+
         BufferedImage image = task.getImage();
 
         int length = image.getWidth();
