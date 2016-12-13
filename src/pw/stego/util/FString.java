@@ -1,4 +1,4 @@
-package pw.util;
+package pw.stego.util;
 
 /**
  * Strings static functions

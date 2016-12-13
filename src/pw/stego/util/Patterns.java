@@ -1,4 +1,4 @@
-package pw.stego;
+package pw.stego.util;
 
 import java.awt.*;
 import java.util.Random;

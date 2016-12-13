@@ -1,8 +1,8 @@
-package pw;
+package pw.stego;
 
 import pw.stego.coders.Decoder;
 import pw.stego.coders.Encoder;
-import pw.stego.task.DecodeTask;
+import pw.stego.coders.WrongTaskException;
 import pw.stego.task.EncodeTask;
 import pw.stego.task.Task;
 
@@ -37,12 +37,13 @@ public class TaskHandler {
      * Processes associated task
      * @return Result of processing task: Boolean if task is to encode date and byte array if to decode
      */
-    public Object process() {
+    @SuppressWarnings("WeakerAccess")
+    public Object process() throws WrongTaskException {
         if (decoder != null)
-            return result = decoder.decode((DecodeTask) task);
+            return result = decoder.decode(task);
 
         if (encoder != null)
-            return result = encoder.encode((EncodeTask) task);
+            return result = encoder.encode(task);
 
         return result = false;
     }
@@ -51,6 +52,7 @@ public class TaskHandler {
      * Finishes task with writing changes to filesystem
      * @return True if rewriting container is successful and false if not
      */
+    @SuppressWarnings("WeakerAccess")
     public boolean writeResult() {
         if (task instanceof EncodeTask) try {
             task.finish();
@@ -62,7 +64,7 @@ public class TaskHandler {
         }
 
         String path = task.getContainer().getAbsolutePath();
-        path = path.substring(0, path.length() - 4) + ".dec";
+        path = path.substring(0, path.lastIndexOf('.')) + ".dec";
 
         try {
             Files.write(Paths.get(path), (byte[]) result);
