@@ -1,8 +1,8 @@
 package pw.stego.task;
 
 import pw.stego.Block;
-import pw.stego.Patterns;
-import pw.util.FString;
+import pw.stego.util.FString;
+import pw.stego.util.Patterns;
 
 import java.awt.*;
 import java.io.File;
@@ -64,11 +64,11 @@ public class EncodeTask extends Task {
      * @return true if there is data left, false if none
      */
     public Boolean nextDataPart() {
-        if (!pattern.contains("<p"))
+        if (!pattern.contains("<j"))
             return false;
 
-        pattern = FString.cutFrom(pattern, "<p");
-        String patternPart = FString.getBetween(pattern, ">", "<p");
+        pattern = FString.cutFrom(pattern, "<j");
+        String patternPart = FString.getBetween(pattern, ">", "<j");
 
         String[] parts = patternPart.split("<(?:i|t)>");
         int blocks = countBlocks(parts);
@@ -81,9 +81,9 @@ public class EncodeTask extends Task {
         String[] coords = FString.getBetween(pattern, ":", ">").split(",");
         from = new Point(Integer.parseInt(coords[0]), Integer.parseInt(coords[1]));
 
-        switch (Block.getSectionEnd(pattern.indexOf("<p:"), pattern.indexOf("<pm:"))) {
+        switch (Block.getSectionEnd(pattern.indexOf("<j:"), pattern.indexOf("<jm:"))) {
             case JUMP:
-                coords = FString.getBetween(pattern, "<p:", ">").split(",");
+                coords = FString.getBetween(pattern, "<j:", ">").split(",");
                 int[] point = new int[]{
                         Integer.parseInt(coords[0]), Integer.parseInt(coords[1])
                 };
@@ -95,7 +95,7 @@ public class EncodeTask extends Task {
                 break;
 
             case JUMP_MARKED:
-                coords = FString.getBetween(pattern, "<pm:", ">").split(",");
+                coords = FString.getBetween(pattern, "<jm:", ">").split(",");
                 int[] markedPoint = new int[]{
                         Integer.parseInt(coords[0]), Integer.parseInt(coords[1]), Integer.parseInt(coords[2])
                 };
