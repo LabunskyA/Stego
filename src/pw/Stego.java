@@ -1,10 +1,11 @@
 package pw;
 
-import pw.stego.Patterns;
 import pw.stego.coders.Decoder;
 import pw.stego.coders.Encoder;
+import pw.stego.coders.WrongTaskException;
 import pw.stego.task.DecodeTask;
 import pw.stego.task.EncodeTask;
+import pw.stego.util.Patterns;
 
 import javax.imageio.ImageIO;
 import java.io.File;
@@ -20,15 +21,17 @@ public class Stego {
     private static final Decoder decoder = new Decoder();
 
     public static void encode(byte[] key, byte[] message, String pattern, File container) {
-        encoder.encode(new EncodeTask(
-                container,
-                message,
-                key,
-                pattern
-        ));
+        try {
+            encoder.encode(new EncodeTask(
+                    container,
+                    message,
+                    key,
+                    pattern
+            ));
+        } catch (WrongTaskException ignored) { /*never happens*/ }
     }
 
-    public static void encode(File key, File message, File pattern, File container) {
+    public static void encode(File key, File message, File pattern, File container) throws IOException {
         try {
             encoder.encode(new EncodeTask(
                     container,
@@ -36,21 +39,21 @@ public class Stego {
                     Files.readAllBytes(key.toPath()),
                     new String(Files.readAllBytes(pattern.toPath()))
             ));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        } catch (WrongTaskException e) { /*never happens*/ }
     }
 
     public static void encode(byte[] key, byte[] message, Patterns.Type type, File container) {
-        encoder.encode(new EncodeTask(
-                container,
-                message,
-                key,
-                type
-        ));
+        try {
+            encoder.encode(new EncodeTask(
+                    container,
+                    message,
+                    key,
+                    type
+            ));
+        } catch (WrongTaskException e) { /*never happens*/ }
     }
 
-    public static void encode(File key, File message, Patterns.Type type, File container) {
+    public static void encode(File key, File message, Patterns.Type type, File container) throws IOException {
         try {
             encoder.encode(new EncodeTask(
                     container,
@@ -58,25 +61,26 @@ public class Stego {
                     Files.readAllBytes(key.toPath()),
                     type
             ));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        } catch (WrongTaskException e) { /*never happens*/ }
     }
 
     public static byte[] decode(byte[] key, File container) {
-        return decoder.decode(new DecodeTask(container, key));
+        try {
+            return decoder.decode(new DecodeTask(container, key));
+        } catch (WrongTaskException e) { /*never happens*/ }
+
+        return new byte[0];
     }
 
     public static byte[] decode(File key, File container) throws IOException {
-        return decoder.decode(new DecodeTask(container, Files.readAllBytes(key.toPath())));
+        try {
+            return decoder.decode(new DecodeTask(container, Files.readAllBytes(key.toPath())));
+        } catch (WrongTaskException e) { /*never happens*/ }
+
+        return new byte[0];
     }
 
-    public static boolean tryKey(byte[] key, File container) {
-        try {
-            return decoder.checkKey(key, ImageIO.read(container));
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
-        }
+    public static boolean tryKey(byte[] key, File container) throws IOException {
+        return decoder.checkKey(key, ImageIO.read(container));
     }
 }
