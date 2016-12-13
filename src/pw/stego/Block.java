@@ -1,6 +1,6 @@
 package pw.stego;
 
-import pw.util.FString;
+import pw.stego.util.FString;
 
 import java.nio.charset.StandardCharsets;
 
