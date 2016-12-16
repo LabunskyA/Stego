@@ -35,8 +35,6 @@ public class EncodeTask extends Task {
                 input.length(),
                 new Point(getImage().getWidth(), getImage().getHeight())
         );
-
-        System.out.println(this.pattern);
     }
 
     /**

@@ -20,7 +20,7 @@ public class Stego {
     private static final Encoder encoder = new Encoder();
     private static final Decoder decoder = new Decoder();
 
-    public static void encode(byte[] key, byte[] message, String pattern, File container) {
+    public static File encode(byte[] key, byte[] message, String pattern, File container) {
         try {
             encoder.encode(new EncodeTask(
                     container,
@@ -29,9 +29,11 @@ public class Stego {
                     pattern
             ));
         } catch (WrongTaskException ignored) { /*never happens*/ }
+
+        return container;
     }
 
-    public static void encode(File key, File message, File pattern, File container) throws IOException {
+    public static File encode(File key, File message, File pattern, File container) throws IOException {
         try {
             encoder.encode(new EncodeTask(
                     container,
@@ -40,9 +42,11 @@ public class Stego {
                     new String(Files.readAllBytes(pattern.toPath()))
             ));
         } catch (WrongTaskException e) { /*never happens*/ }
+
+        return container;
     }
 
-    public static void encode(byte[] key, byte[] message, Patterns.Type type, File container) {
+    public static File encode(byte[] key, byte[] message, Patterns.Type type, File container) {
         try {
             encoder.encode(new EncodeTask(
                     container,
@@ -51,9 +55,11 @@ public class Stego {
                     type
             ));
         } catch (WrongTaskException e) { /*never happens*/ }
+
+        return container;
     }
 
-    public static void encode(File key, File message, Patterns.Type type, File container) throws IOException {
+    public static File encode(File key, File message, Patterns.Type type, File container) throws IOException {
         try {
             encoder.encode(new EncodeTask(
                     container,
@@ -62,6 +68,8 @@ public class Stego {
                     type
             ));
         } catch (WrongTaskException e) { /*never happens*/ }
+
+        return container;
     }
 
     public static byte[] decode(byte[] key, File container) {
