@@ -20,14 +20,17 @@ public class Stego {
     private static final Encoder encoder = new Encoder();
     private static final Decoder decoder = new Decoder();
 
-    public static File encode(byte[] key, byte[] message, String pattern, File container) {
+    public static File encode(byte[] key, byte[] message, String pattern, File container) throws IOException {
         try {
-            encoder.encode(new EncodeTask(
+            EncodeTask task = new EncodeTask(
                     container,
                     message,
                     key,
                     pattern
-            ));
+            );
+
+            encoder.encode(task);
+            task.finish();
         } catch (WrongTaskException ignored) { /*never happens*/ }
 
         return container;
@@ -35,25 +38,31 @@ public class Stego {
 
     public static File encode(File key, File message, File pattern, File container) throws IOException {
         try {
-            encoder.encode(new EncodeTask(
+            EncodeTask task = new EncodeTask(
                     container,
                     Files.readAllBytes(message.toPath()),
                     Files.readAllBytes(key.toPath()),
                     new String(Files.readAllBytes(pattern.toPath()))
-            ));
+            );
+
+            encoder.encode(task);
+            task.finish();
         } catch (WrongTaskException e) { /*never happens*/ }
 
         return container;
     }
 
-    public static File encode(byte[] key, byte[] message, Patterns.Type type, File container) {
+    public static File encode(byte[] key, byte[] message, Patterns.Type type, File container) throws IOException {
         try {
-            encoder.encode(new EncodeTask(
+            EncodeTask task = new EncodeTask(
                     container,
                     message,
                     key,
                     type
-            ));
+            );
+
+            encoder.encode(task);
+            task.finish();
         } catch (WrongTaskException e) { /*never happens*/ }
 
         return container;
@@ -61,20 +70,28 @@ public class Stego {
 
     public static File encode(File key, File message, Patterns.Type type, File container) throws IOException {
         try {
-            encoder.encode(new EncodeTask(
+            EncodeTask task = new EncodeTask(
                     container,
                     Files.readAllBytes(message.toPath()),
                     Files.readAllBytes(key.toPath()),
                     type
-            ));
+            );
+
+            encoder.encode(task);
+            task.finish();
         } catch (WrongTaskException e) { /*never happens*/ }
 
         return container;
     }
 
-    public static byte[] decode(byte[] key, File container) {
+    public static byte[] decode(byte[] key, File container) throws IOException {
         try {
-            return decoder.decode(new DecodeTask(container, key));
+            DecodeTask task = new DecodeTask(container, key);
+
+            byte[] decoded = decoder.decode(task);
+            task.finish();
+
+            return decoded;
         } catch (WrongTaskException e) { /*never happens*/ }
 
         return new byte[0];
@@ -82,7 +99,12 @@ public class Stego {
 
     public static byte[] decode(File key, File container) throws IOException {
         try {
-            return decoder.decode(new DecodeTask(container, Files.readAllBytes(key.toPath())));
+            DecodeTask task = new DecodeTask(container, Files.readAllBytes(key.toPath()));
+
+            byte[] decoded = decoder.decode(task);
+            task.finish();
+
+            return decoded;
         } catch (WrongTaskException e) { /*never happens*/ }
 
         return new byte[0];
