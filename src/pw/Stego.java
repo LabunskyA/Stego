@@ -1,5 +1,6 @@
 package pw;
 
+import pw.stego.Block;
 import pw.stego.coders.Decoder;
 import pw.stego.coders.Encoder;
 import pw.stego.coders.WrongTaskException;
@@ -8,9 +9,11 @@ import pw.stego.task.EncodeTask;
 import pw.stego.util.Patterns;
 
 import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Arrays;
 
 /**
  * Basic static functions, highest abstraction level
@@ -29,8 +32,7 @@ public class Stego {
                     pattern
             );
 
-            encoder.encode(task);
-            task.finish();
+            encodeTask(task);
         } catch (WrongTaskException ignored) { /*never happens*/ }
 
         return container;
@@ -45,8 +47,7 @@ public class Stego {
                     new String(Files.readAllBytes(pattern.toPath()))
             );
 
-            encoder.encode(task);
-            task.finish();
+            encodeTask(task);
         } catch (WrongTaskException e) { /*never happens*/ }
 
         return container;
@@ -61,8 +62,7 @@ public class Stego {
                     type
             );
 
-            encoder.encode(task);
-            task.finish();
+            encodeTask(task);
         } catch (WrongTaskException e) { /*never happens*/ }
 
         return container;
@@ -77,8 +77,7 @@ public class Stego {
                     type
             );
 
-            encoder.encode(task);
-            task.finish();
+            encodeTask(task);
         } catch (WrongTaskException e) { /*never happens*/ }
 
         return container;
@@ -112,5 +111,31 @@ public class Stego {
 
     public static boolean tryKey(byte[] key, File container) throws IOException {
         return decoder.checkKey(key, ImageIO.read(container));
+    }
+
+    public static void removeBefore(BufferedImage image, Block[] toRemove, int before) {
+        int length = image.getWidth();
+
+        int firstKey;
+        while ((firstKey = decoder.find(image, toRemove)) < before) {
+            int x = (firstKey - 1) % length;
+            int y = (firstKey - 1) / length;
+
+            image.setRGB(x, y, image.getRGB(x, y) ^ 1);
+        }
+    }
+
+    private static void encodeTask(EncodeTask task) throws WrongTaskException, IOException {
+        encoder.encode(task);
+        removeBefore(task.getImage(), task.getKey(), task.getStart());
+        task.finish();
+    }
+
+    public static void main(String[] args) throws IOException {
+        byte[] key = "mat".getBytes();
+        byte[] message = "testing".getBytes();
+
+        Stego.encode(key, message, Patterns.Type.SIMPLE, new File("tests/garfield.png"));
+        System.out.println(Arrays.toString(Stego.decode(key, new File("tests/garfield.png"))));
     }
 }

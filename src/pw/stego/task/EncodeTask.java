@@ -13,21 +13,26 @@ import java.nio.charset.StandardCharsets;
  * Created by lina on 14.09.16.
  */
 public class EncodeTask extends Task {
+    private final int start;
+    private Block[] key;
+
     private String input;
     private String pattern;
 
     private Block[] data;
     private Block[] meta;
 
-    private Point from;
+    private Point cursor;
 
     /**
      * Constructor without defined container, but with defined container type
-     * @param patternType pattern distribution type from Patterns.Type enum
+     * @param patternType pattern distribution type cursor Patterns.Type enum
      */
     public EncodeTask(File container, byte[] message, byte[] key, Patterns.Type patternType) {
         super(container, readBI(container));
         type = Type.ENCODE;
+
+        this.key = Block.toBlocks(key);
 
         input = new String(key, StandardCharsets.ISO_8859_1) + new String(message, StandardCharsets.ISO_8859_1);
         pattern = Patterns.createPattern(
@@ -35,6 +40,14 @@ public class EncodeTask extends Task {
                 input.length(),
                 new Point(getImage().getWidth(), getImage().getHeight())
         );
+
+        if (pattern != null)
+            start = Integer.parseInt(pattern.substring(3, pattern.indexOf(","))) +
+                    Integer.parseInt(pattern.substring(
+                                    pattern.indexOf(",") + 1,
+                                    pattern.indexOf(">")
+                    )) * getImage().getWidth();
+        else start = -1;
     }
 
     /**
@@ -47,6 +60,9 @@ public class EncodeTask extends Task {
 
         this.input = new String(key, StandardCharsets.ISO_8859_1) + new String(message, StandardCharsets.ISO_8859_1);
         this.pattern = pattern;
+
+        start = Integer.parseInt(pattern.substring(2, pattern.indexOf(","))) +
+                Integer.parseInt(pattern.substring(pattern.indexOf(",") + 1, pattern.indexOf("<")));
     }
 
     private int countBlocks(String[] parts) {
@@ -77,7 +93,7 @@ public class EncodeTask extends Task {
         data = Block.toBlocks(blocks, patternPart, parts, section);
 
         String[] coords = FString.getBetween(pattern, ":", ">").split(",");
-        from = new Point(Integer.parseInt(coords[0]), Integer.parseInt(coords[1]));
+        cursor = new Point(Integer.parseInt(coords[0]), Integer.parseInt(coords[1]));
 
         switch (Block.getSectionEnd(pattern.indexOf("<j:"), pattern.indexOf("<jm:"))) {
             case JUMP:
@@ -120,7 +136,15 @@ public class EncodeTask extends Task {
         return meta;
     }
 
-    public Point fromPoint() {
-        return from;
+    public Point getCursor() {
+        return cursor;
+    }
+
+    public int getStart() {
+        return start;
+    }
+
+    public Block[] getKey() {
+        return key;
     }
 }
