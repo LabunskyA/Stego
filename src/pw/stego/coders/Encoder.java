@@ -58,8 +58,8 @@ public class Encoder extends Coder {
     public boolean encode(Task encodeTask) throws WrongTaskException {
         if (!(encodeTask instanceof EncodeTask))
             throw new WrongTaskException();
-        EncodeTask task = (EncodeTask) encodeTask;
 
+        EncodeTask task = (EncodeTask) encodeTask;
         BufferedImage image = task.getImage();
 
         int length = image.getWidth();
@@ -67,7 +67,11 @@ public class Encoder extends Coder {
 
         try {
             while (task.nextDataPart()) {
-                i = encode(image, task.fromPoint().y * length + task.fromPoint().x, task.getData());
+                i = encode(
+                        image,
+                        task.getCursor().y * length + task.getCursor().x,
+                        task.getData()
+                );
 
                 if (task.getMeta() != null) {
                     image.setRGB(

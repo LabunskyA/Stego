@@ -29,10 +29,11 @@ public class Decoder extends Coder {
 
         int from = find(image, key);
         if (from == -1)
-            return null;
-        int size = decode(image, result, from);
+            return new byte[0];
 
+        int size = decode(image, result, from);
         System.arraycopy(result, 0, (result = new byte[size]), 0, size);
+
         return result;
     }
 
@@ -52,23 +53,15 @@ public class Decoder extends Coder {
             for (int shift = 0; shift < 7 && !control; cursor += delta, shift += 2)
                 switch (toBlock(part = toDecoded(image.getRGB(cursor % length, cursor / length)))) {
                     case INV:
-                        delta *= -1;
+                        delta = -delta;
+
+                    case JUMP:
+                    case EOF:
                         control = true;
                         break;
 
                     case TRANS:
-                        if (transposed)
-                            delta /= length;
-                        else {
-                            cursor += delta;
-                            delta *= length;
-                            cursor -= delta;
-                        }
-
-                        transposed = !transposed;
-
-                    case JUMP:
-                    case EOF:
+                        cursor = transpose(cursor, length);
                         control = true;
                         break;
 
@@ -85,11 +78,10 @@ public class Decoder extends Coder {
                         p[shift / 16] = p[shift / 16] | ((part & 3) << (shift % 16));
                     }
 
-                    if ((p[1] & 0x8000) != 0)
-                        if (!processMark(image, cursor)) {
-                            cursor += delta * 4;
-                            break;
-                        }
+                    if ((p[1] & 0x8000) != 0 && !processMark(image, cursor)) {
+                        cursor += delta * 4;
+                        break;
+                    }
 
                     cursor = (p[1] & 0x7fff) * length + p[0];
                     break;
@@ -98,6 +90,22 @@ public class Decoder extends Coder {
                     return size;
             } else result[size++] = (byte) temp;
         }
+    }
+
+    /**
+     * @param cursor for data
+     * @param shift transponation coefficient
+     * @return new cursor value
+     */
+    private int transpose(int cursor, int shift) {
+        transposed = !transposed;
+
+        if (!transposed) {
+            delta /= shift;
+            return cursor;
+        }
+
+        return cursor + delta - (delta *= shift);
     }
 
     /**
@@ -130,10 +138,10 @@ public class Decoder extends Coder {
      * @param key to search
      * @return index of first point after key
      */
-    private int find(BufferedImage image, Block[] key) {
+    public int find(BufferedImage image, Block[] key) {
         int length = image.getWidth();
 
-        for (int i = 0; i < image.getHeight() * length; i++)
+        for (int i = 0; i < image.getHeight() * length - key.length; i++)
             for (int j = i; j < i + key.length; j++)
                 if ((toDecoded(image.getRGB(j % length, j / length)) & 3) != ((key[j - i].value)))
                     break;
