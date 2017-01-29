@@ -31,19 +31,12 @@ public class Encoder extends Coder {
 
             switch (data[i].type) {
                 case TRANS:
-                    if (transposed)
-                        delta /= length;
-                    else {
-                        cursor += delta;
-                        delta *= length;
-                        cursor -= delta;
-                    }
-
-                    transposed = !transposed;
+                    cursor = transpose(cursor, length);
                     break;
 
                 case INV:
-                    delta *= -1;
+                    delta = -delta;
+                    break;
             }
         }
 
@@ -63,30 +56,13 @@ public class Encoder extends Coder {
         BufferedImage image = task.getImage();
 
         int length = image.getWidth();
-        int i = 0;
 
         try {
-            while (task.nextDataPart()) {
-                i = encode(
-                        image,
-                        task.getCursor().y * length + task.getCursor().x,
-                        task.getData()
-                );
-
-                if (task.getMeta() != null) {
-                    image.setRGB(
-                            i % length, i / length,
-                            (image.getRGB(i % length, i / length) & 0xfffffefe) | 0x10101
-                    );
-
-                    encode(image, i + delta, task.getMeta());
-                }
+            Block[] data;
+            while ((data = task.nextDataPart()).length > 0) {
+                int jump[] = task.getNextJump();
+                encode(image, jump[1] * length + jump[0], data);
             }
-
-            image.setRGB(
-                    i % length, i / length,
-                    (image.getRGB(i % length, i / length) & 0xfffffefe) | 0x10000
-            );
         } catch (ArrayIndexOutOfBoundsException e) {
             e.printStackTrace();
             return false;

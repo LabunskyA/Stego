@@ -1,6 +1,7 @@
 package pw.stego.util;
 
 import java.awt.*;
+import java.util.NoSuchElementException;
 import java.util.Random;
 
 /**
@@ -19,15 +20,16 @@ public class Patterns {
                 return newCumulativeDistributedPattern(messageLength, imageSize);
             case ILED:
                 return newEvenlyDistributedPatter(messageLength, imageSize);
+
             default:
-                return null;
+                throw new NoSuchElementException("Not supported container type");
         }
     }
 
     private static String newSimplePattern(int messageLength, Point imageSize) {
-        int empty = imageSize.x * imageSize.y - messageLength * 4;
-        if (empty <= 0)
-            return null;
+        int empty = imageSize.x * imageSize.y - messageLength;
+        if (empty < 0)
+            throw new ArrayIndexOutOfBoundsException("Not enough space in image");
 
         int start = new Random().nextInt(empty);
         return getJump(new Point(start % imageSize.x, start / imageSize.x)) + messageLength;
@@ -37,9 +39,9 @@ public class Patterns {
         final StringBuilder pattern = new StringBuilder();
         final Random r = new Random();
 
-        int empty = imageSize.x * imageSize.y - messageLength * 4;
+        int empty = imageSize.x * imageSize.y - messageLength;
         if (empty < 0)
-            return null;
+            throw new ArrayIndexOutOfBoundsException("Not enough space in image");
 
         int current = 0;
         int from = 0;
@@ -76,7 +78,7 @@ public class Patterns {
     private static String newEvenlyDistributedPatter(int messageLength, Point imageSize) {
         Random r = new Random();
 
-        int empty = imageSize.x * imageSize.y - messageLength * 4;
+        int empty = imageSize.x * imageSize.y - messageLength;
         if (empty < 0)
             return null;
 
@@ -99,6 +101,6 @@ public class Patterns {
     }
 
     private static String getJump(Point to) {
-        return "<p:" + to.x + "," + to.y + ">";
+        return "<j:" + to.x + "," + to.y + ">";
     }
 }

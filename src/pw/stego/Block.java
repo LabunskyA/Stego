@@ -19,13 +19,14 @@ public class Block {
         type = Type.NONE;
     }
 
-    private Block(Type type) {
+    public Block(Type type) {
         this.type = type;
         switch (type) {
             case EOF:
                 value = 4;
                 break;
             case JUMP:
+            case JUMP_MARKED:
                 value = 7;
                 break;
             case INV:
@@ -87,27 +88,6 @@ public class Block {
                 result[id++] = new Block((byte) ((data[i] >> shift) & 3));
 
         return result;
-    }
-
-    /**
-     * Extracts type of control block in the end of the section
-     * @param p Index of jump block
-     * @param pm Index of marked jump block
-     * @return Next nearest control block type
-     */
-    public static Type getSectionEnd(int p, int pm) {
-        if (p == pm)
-            return Type.EOF;
-
-        if (p == -1)
-            return Type.JUMP_MARKED;
-        if (pm == -1)
-            return Type.JUMP;
-
-        if (p < pm)
-            return Type.JUMP;
-
-        return Type.JUMP_MARKED;
     }
 
     @Override

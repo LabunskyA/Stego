@@ -7,6 +7,9 @@ import pw.stego.util.Patterns;
 import java.awt.*;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Task with encode constroctors and fields
@@ -15,14 +18,16 @@ import java.nio.charset.StandardCharsets;
 public class EncodeTask extends Task {
     private final int start;
     private Block[] key;
-
-    private String input;
-    private String pattern;
-
     private Block[] data;
-    private Block[] meta;
 
-    private Point cursor;
+    private int dataId = 0;
+    private int controlId = 0;
+
+    private final String pattern;
+    private final String[] controls;
+    private final String[] counts;
+
+    private final int[] jump = new int[2];
 
     /**
      * Constructor without defined container, but with defined container type
@@ -33,21 +38,21 @@ public class EncodeTask extends Task {
         type = Type.ENCODE;
 
         this.key = Block.toBlocks(key);
+        this.data = Block.toBlocks((new String(key) + new String(message)).getBytes(StandardCharsets.ISO_8859_1));
 
-        input = new String(key, StandardCharsets.ISO_8859_1) + new String(message, StandardCharsets.ISO_8859_1);
         pattern = Patterns.createPattern(
                 patternType,
-                input.length(),
+                data.length,
                 new Point(getImage().getWidth(), getImage().getHeight())
         );
+        this.controls = pattern.split(">(([0-9].*?<)|<)");
+        this.counts =  pattern.split("<(i|t|j).*?>");
 
-        if (pattern != null)
-            start = Integer.parseInt(pattern.substring(3, pattern.indexOf(","))) +
-                    Integer.parseInt(pattern.substring(
-                                    pattern.indexOf(",") + 1,
-                                    pattern.indexOf(">")
-                    )) * getImage().getWidth();
-        else start = -1;
+        start = Integer.parseInt(pattern.substring(3, pattern.indexOf(","))) +
+                Integer.parseInt(pattern.substring(
+                        pattern.indexOf(",") + 1,
+                        pattern.indexOf(">")
+                )) * getImage().getWidth() + this.key.length;
     }
 
     /**
@@ -58,86 +63,96 @@ public class EncodeTask extends Task {
         super(container, readBI(container));
         type = Type.ENCODE;
 
-        this.input = new String(key, StandardCharsets.ISO_8859_1) + new String(message, StandardCharsets.ISO_8859_1);
+        this.key = Block.toBlocks(key);
+        this.data = Block.toBlocks((new String(key) + new String(message)).getBytes(StandardCharsets.ISO_8859_1));
+
         this.pattern = pattern;
+        this.controls = pattern.split(">(([0-9].*?<)|<)");
+        this.counts =  pattern.split("<(i|t|j).*?>");
 
-        start = Integer.parseInt(pattern.substring(2, pattern.indexOf(","))) +
-                Integer.parseInt(pattern.substring(pattern.indexOf(",") + 1, pattern.indexOf("<")));
+        start = Integer.parseInt(pattern.substring(3, pattern.indexOf(","))) +
+                Integer.parseInt(pattern.substring(
+                        pattern.indexOf(",") + 1,
+                        pattern.indexOf(">")
+                )) * getImage().getWidth() + this.key.length;
     }
 
-    private int countBlocks(String[] parts) {
-        int blocks = parts.length - 1;
-        for (String part : parts)
-            if (part.length() > 0)
-                blocks += Integer.parseInt(part) * 4;
-        return blocks;
-    }
+    public Block[] nextDataPart() {
+        if (controlId >= controls.length)
+            return new Block[0];
 
-    /**
-     * Process next section into byte array if any
-     * @return true if there is data left, false if none
-     */
-    public Boolean nextDataPart() {
-        if (!pattern.contains("<j"))
-            return false;
+        /*From where do we begin?*/ {
+            if (controls[controlId].contains(">"))
+                controls[controlId] = FString.cutTo(controls[controlId], ">");
 
-        pattern = FString.cutFrom(pattern, "<j");
-        String patternPart = FString.getBetween(pattern, ">", "<j");
+            String[] coords = FString.cutFrom(controls[controlId], ":").split(",");
 
-        String[] parts = patternPart.split("<(?:i|t)>");
-        int blocks = countBlocks(parts);
-
-        String section = FString.cutTo(input, (blocks - (parts.length - 1)) / 4);
-        input = FString.cutFrom(input, (blocks - (parts.length - 1)) / 4);
-
-        data = Block.toBlocks(blocks, patternPart, parts, section);
-
-        String[] coords = FString.getBetween(pattern, ":", ">").split(",");
-        cursor = new Point(Integer.parseInt(coords[0]), Integer.parseInt(coords[1]));
-
-        switch (Block.getSectionEnd(pattern.indexOf("<j:"), pattern.indexOf("<jm:"))) {
-            case JUMP:
-                coords = FString.getBetween(pattern, "<j:", ">").split(",");
-                int[] point = new int[]{
-                        Integer.parseInt(coords[0]), Integer.parseInt(coords[1])
-                };
-
-                meta = Block.toBlocks(new byte[] {
-                        (byte) (point[0] & 0xff), (byte) ((point[0] & 0xff00) >> 8),
-                        (byte) (point[1] & 0xff), (byte) ((point[1] & 0x7f00) >> 8)
-                });
-                break;
-
-            case JUMP_MARKED:
-                coords = FString.getBetween(pattern, "<jm:", ">").split(",");
-                int[] markedPoint = new int[]{
-                        Integer.parseInt(coords[0]), Integer.parseInt(coords[1]), Integer.parseInt(coords[2])
-                };
-
-                meta = Block.toBlocks(new byte[] {
-                        (byte) (markedPoint[0] & 0xff), (byte) ((markedPoint[0] & 0xff00) >> 8),
-                        (byte) (markedPoint[1] & 0xff), (byte) ((markedPoint[1] & 0xff00 | 0x8000) >> 8),
-                        (byte) (markedPoint[2]  & 0xff)
-                });
-                break;
-
-            default:
-                meta = null;
+            jump[0] = Integer.parseInt(coords[0]);
+            jump[1] = Integer.parseInt(coords[1]);
         }
 
-        return true;
+        int from = ++controlId;
+        while (controlId < controls.length && controls[controlId].charAt(0) != 'j')
+            controlId++;
+        int to = controlId;
+
+        List<Block> merged = new ArrayList<>(100);
+        for (int i = from; i < to && i < counts.length; i++) {
+            if (counts[i].length() > 0)
+                for (int j = 0, count = Integer.parseInt(counts[i]); j < count; j++)
+                    merged.add(data[dataId++]);
+            
+            switch (controls[i].charAt(0)) {
+                case 'i':
+                    merged.add(new Block(Block.Type.INV));
+                    break;
+
+                case 't':
+                    merged.add(new Block(Block.Type.TRANS));
+                    break;
+            }
+        }
+
+        if (to < counts.length && counts[to].length() > 0)
+            for (int j = 0, count = Integer.parseInt(counts[to]); j < count; j++)
+                merged.add(data[dataId++]);
+
+        if (to < controls.length) {
+            if (controls[controlId].contains(">"))
+                controls[controlId] = FString.cutTo(controls[controlId], ">");
+
+            String[] coords = FString.cutFrom(controls[controlId], ":").split(",");
+            int[] jump = new int[coords.length];
+
+            for (int i = 0; i < coords.length; i++)
+                jump[i] = Integer.parseInt(coords[i]);
+
+            merged.add(new Block(Block.Type.JUMP));
+            if (jump.length == 2)
+                Collections.addAll(merged, Block.toBlocks(new byte[]{
+                        (byte) (jump[0] & 0xff), (byte) ((jump[0] & 0xff00) >> 8),
+                        (byte) (jump[1] & 0xff), (byte) ((jump[1] & 0x7f00) >> 8)
+                }));
+            else
+                Collections.addAll(merged, Block.toBlocks(new byte[]{
+                        (byte) (jump[0] & 0xff), (byte) ((jump[0] & 0xff00)          >> 8),
+                        (byte) (jump[1] & 0xff), (byte) ((jump[1] & 0xff00 | 0x8000) >> 8),
+                        (byte) (jump[2] & 0xff)
+            }));
+        } else merged.add(new Block(Block.Type.EOF));
+
+        return fromList(merged);
     }
 
-    public Block[] getData() {
-        return data;
+    private Block[] fromList(List<Block> blocks) {
+        Block[] result = new Block[blocks.size()];
+        for (int i = 0; i < result.length; i++)
+            result[i] = blocks.get(i);
+        return result;
     }
 
-    public Block[] getMeta() {
-        return meta;
-    }
-
-    public Point getCursor() {
-        return cursor;
+    public int[] getNextJump() {
+        return jump;
     }
 
     public int getStart() {

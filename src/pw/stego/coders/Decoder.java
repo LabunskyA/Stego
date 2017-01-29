@@ -56,6 +56,7 @@ public class Decoder extends Coder {
                         delta = -delta;
 
                     case JUMP:
+                    case JUMP_MARKED:
                     case EOF:
                         control = true;
                         break;
@@ -90,22 +91,6 @@ public class Decoder extends Coder {
                     return size;
             } else result[size++] = (byte) temp;
         }
-    }
-
-    /**
-     * @param cursor for data
-     * @param shift transponation coefficient
-     * @return new cursor value
-     */
-    private int transpose(int cursor, int shift) {
-        transposed = !transposed;
-
-        if (!transposed) {
-            delta /= shift;
-            return cursor;
-        }
-
-        return cursor + delta - (delta *= shift);
     }
 
     /**

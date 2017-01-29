@@ -13,7 +13,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Arrays;
 
 /**
  * Basic static functions, highest abstraction level
@@ -113,7 +112,7 @@ public class Stego {
         return decoder.checkKey(key, ImageIO.read(container));
     }
 
-    public static void removeBefore(BufferedImage image, Block[] toRemove, int before) {
+    private static void removeBefore(BufferedImage image, Block[] toRemove, int before) {
         int length = image.getWidth();
 
         int firstKey;
@@ -129,13 +128,5 @@ public class Stego {
         encoder.encode(task);
         removeBefore(task.getImage(), task.getKey(), task.getStart());
         task.finish();
-    }
-
-    public static void main(String[] args) throws IOException {
-        byte[] key = "mat".getBytes();
-        byte[] message = "testing".getBytes();
-
-        Stego.encode(key, message, Patterns.Type.SIMPLE, new File("tests/garfield.png"));
-        System.out.println(Arrays.toString(Stego.decode(key, new File("tests/garfield.png"))));
     }
 }

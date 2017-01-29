@@ -7,7 +7,7 @@ import pw.stego.Block;
  */
 class Coder {
     int delta = 1;
-    boolean transposed = false;
+    private boolean transposed = false;
 
     static int toDecoded(int a) {
         return (((a & ~0xfeffff) >> 16) & 1) << 2 | (((a & ~0xfeff) >> 8) & 1) << 1 | a & ~0xfe & 1;
@@ -26,5 +26,21 @@ class Coder {
         }
 
         return Block.Type.NONE;
+    }
+
+    /**
+     * @param cursor for data
+     * @param shift transponation coefficient
+     * @return new cursor value
+     */
+    int transpose(int cursor, int shift) {
+        transposed = !transposed;
+
+        if (!transposed) {
+            delta /= shift;
+            return cursor;
+        }
+
+        return cursor + delta - (delta *= shift);
     }
 }
