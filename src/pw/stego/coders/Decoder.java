@@ -10,6 +10,10 @@ import java.awt.image.BufferedImage;
  * Class for decoding message from container
  */
 public class Decoder extends Coder {
+    public Decoder(int shift, int mZ) {
+        super(shift, mZ);
+    }
+
     /**
      * @param decodeTask to process
      * @return all hidden data in byte array. Null in case if wrong key specified
@@ -44,65 +48,74 @@ public class Decoder extends Coder {
      * @return count of extracted bytes
      */
     private int decode(BufferedImage image, byte[] result, int from) {
-        int size = 0;
-        int length = image.getWidth();
+        final int length = image.getWidth();
+        final int totalPixels = image.getWidth() * image.getHeight();
 
-        for (int cursor = from, temp = 0, part = 0;; temp = 0) {
-            boolean control = false;
+        jumpTo(from);
+        for (int shift = 0, part, size = 0;;) {
+            Block.Type type = Block.Type.NONE;
 
-            for (int shift = 0; shift < 7 && !control; cursor += delta, shift += 2)
-                switch (toBlock(part = toDecoded(image.getRGB(cursor % length, cursor / length)))) {
+            while (type != Block.Type.JUMP && type != Block.Type.EOF) {
+                switch (type = toBlock(part = getDataOnCursor(image))) {
                     case INV:
-                        delta = -delta;
-
-                    case JUMP:
-                    case JUMP_MARKED:
-                    case EOF:
-                        control = true;
+                        inverse();
                         break;
 
                     case TRANS:
-                        cursor = transpose(cursor, length);
-                        control = true;
+                        transpose();
                         break;
 
                     case NONE:
-                        temp = temp | ((part & 3) << shift);
+                        result[size] |= (part << (shift * 2));
+
+                        shift++;
+                        if (shift > 3) {
+                            size++;
+                            shift = 0;
+                        }
                 }
 
-            if (control) switch (toBlock(part)) {
+                stepFwd();
+            }
+
+            switch (type) {
                 case JUMP:
-                    int p[] = new int[2];
-
-                    for (int shift = 0; shift < 31; cursor += delta, shift += 2) {
-                        part = toDecoded(image.getRGB(cursor % length, cursor / length));
-                        p[shift / 16] = p[shift / 16] | ((part & 3) << (shift % 16));
-                    }
-
-                    if ((p[1] & 0x8000) != 0 && !processMark(image, cursor)) {
-                        cursor += delta * 4;
-                        break;
-                    }
-
-                    cursor = (p[1] & 0x7fff) * length + p[0];
+                    int p = extractPoint(image, totalPixels) & 0x7fffffff;
+                    jumpTo(p);
                     break;
 
                 case EOF:
                     return size;
-            } else result[size++] = (byte) temp;
+            }
         }
+    }
+
+    private int extractPoint(BufferedImage image, int totalPixels) {
+        int p = 0;
+
+        for (int shift = 0, part; shift < 31; stepFwd(), shift += 2) {
+            part = getDataOnCursor(image);
+            p |= ((part & 3) << shift);
+        }
+
+//        if ((p[1] & 0x8000) != 0 && !processMark(image)) {
+//            for (int i = 0; i < 4; i++)
+//                stepFwd(totalPixels);
+//            p[0] = -1;
+//        }
+
+        return p;
     }
 
     /**
      * @param image as container
-     * @param p point from
      * @return false if mark is 0, true if not
      */
-    private boolean processMark(BufferedImage image, int p) {
-        int length = image.getWidth(), part, mark = 0;
+    private boolean processMark(BufferedImage image) {
+        int part, mark = 0;
 
-        for (int shift = 0; shift < 7; p += delta, shift += 2) {
-            part = toDecoded(image.getRGB(p % length, p / length));
+        for (int shift = 0; shift < 7; stepFwd(), shift += 2) {
+            part = getDataOnCursor(image);
             mark = mark | (part << shift);
         }
 
@@ -110,8 +123,8 @@ public class Decoder extends Coder {
             return false;
         mark--;
 
-        for (int shift = 8; shift > 1; p -= delta, shift -= 2) {
-            int x = p % length, y = p / length;
+        for (int shift = 8; shift > 1; stepBwd(), shift -= 2) {
+            int x = getCursorX(), y = getCursorY();
             image.setRGB(x, y, toEncoded(image.getRGB(x, y), (byte) (mark >> shift & 3)));
         }
 
@@ -124,14 +137,69 @@ public class Decoder extends Coder {
      * @return index of first point after key
      */
     public int find(BufferedImage image, Block[] key) {
-        int length = image.getWidth();
+        final int length = image.getWidth(), totalPixels = image.getHeight() * length;
 
-        for (int i = 0; i < image.getHeight() * length - key.length; i++)
-            for (int j = i; j < i + key.length; j++)
-                if ((toDecoded(image.getRGB(j % length, j / length)) & 3) != ((key[j - i].value)))
-                    break;
-                else if (j == i + key.length - 1)
-                    return key.length + i;
+        for (int from = 0; from < totalPixels; from++, reset(), jumpTo(from)) {
+            for (int shift = 0, id = 0, part;;) {
+                boolean next = false;
+
+                Block.Type type = Block.Type.NONE;
+
+                int count = 0;
+                while (type != Block.Type.JUMP && type != Block.Type.EOF && !next) try {
+                    if (count > 5000) {
+                        next = true;
+                        count = 0;
+                        break;
+                    }
+
+                    switch (type = toBlock(part = getDataOnCursor(image))) {
+                        case INV:
+                            count++;
+                            inverse();
+                            break;
+
+                        case TRANS:
+                            count++;
+                            transpose();
+                            break;
+
+                        case NONE:
+                            if (key[id++].value != part) {
+                                next = true;
+                                break;
+                            } else if (id == key.length) {
+                                stepFwd();
+                                return getCursor();
+                            }
+
+                            shift += 2;
+                            if (shift > 7) {
+                                shift = 0;
+                            }
+                    }
+
+                    stepFwd();
+                } catch (ArrayIndexOutOfBoundsException e) {
+                    next = true;
+                }
+
+                switch (type) {
+                    case JUMP:
+                        int p = extractPoint(image, totalPixels);
+                        if (p == -1)
+                            break;
+
+                        jumpTo(p & 0x7fffffff);
+                        break;
+
+                    case EOF:
+                        next = true;
+                }
+
+                if (next) break;
+            }
+        }
 
         return -1;
     }

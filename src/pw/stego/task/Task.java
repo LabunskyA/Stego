@@ -1,5 +1,7 @@
 package pw.stego.task;
 
+import pw.stego.Block;
+
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -13,12 +15,17 @@ public class Task {
     enum Type {ENCODE, DECODE}
     Type type;
 
+    private final Block[] key;
+    private int start;
+
     private final File container;
     private final BufferedImage image;
 
-    Task(File container, BufferedImage image) {
+    Task(File container, BufferedImage image, Block[] key) {
         this.container = container;
         this.image = image;
+
+        this.key = key;
     }
 
     static BufferedImage readBI(File file) {
@@ -31,7 +38,7 @@ public class Task {
             return null;
         }
 
-        BufferedImage image = new BufferedImage(original.getWidth(), original.getHeight(), BufferedImage.TYPE_INT_RGB);
+        BufferedImage image = new BufferedImage(original.getWidth(), original.getHeight(), BufferedImage.TYPE_INT_ARGB);
         image.getGraphics().drawImage(original, 0, 0, null);
 
         for(int y = 0; y < original.getHeight(); y++)
@@ -49,10 +56,27 @@ public class Task {
         ImageIO.write(image, "PNG", container);
     }
 
+    public int mZ() {
+        return image.getHeight() * image.getWidth();
+    }
+
+    public int shift() {
+        return image.getWidth();
+    }
+
     public BufferedImage getImage() {
         return image;
     }
     public File getContainer() {
         return container;
+    }
+    public Block[] getKey() {
+        Block[] copy = new Block[key.length];
+        System.arraycopy(key, 0, copy, 0, key.length);
+
+        return copy;
+    }
+    public int getStart() {
+        return start;
     }
 }

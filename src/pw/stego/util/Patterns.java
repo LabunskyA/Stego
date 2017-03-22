@@ -1,6 +1,5 @@
 package pw.stego.util;
 
-import java.awt.*;
 import java.util.NoSuchElementException;
 import java.util.Random;
 
@@ -10,36 +9,38 @@ import java.util.Random;
  * VK: vk.com/labunsky
  */
 public class Patterns {
+    private static int JUMP_LENGTH = 17;
+
     public enum Type {SIMPLE, ILCD, ILED}
 
-    public static String createPattern(Type type, int messageLength, Point imageSize) {
+    public static String createPattern(Type type, int messageLength, int imagePixels) {
         switch (type) {
             case SIMPLE:
-                return newSimplePattern(messageLength, imageSize);
+                return newSimplePattern(messageLength, imagePixels);
             case ILCD:
-                return newCumulativeDistributedPattern(messageLength, imageSize);
+                return newCumulativeDistributedPattern(messageLength, imagePixels);
             case ILED:
-                return newEvenlyDistributedPatter(messageLength, imageSize);
+                return newEvenlyDistributedPatter(messageLength, imagePixels);
 
             default:
                 throw new NoSuchElementException("Not supported container type");
         }
     }
 
-    private static String newSimplePattern(int messageLength, Point imageSize) {
-        int empty = imageSize.x * imageSize.y - messageLength;
+    private static String newSimplePattern(int messageLength, int imagePixels) {
+        int empty = imagePixels - messageLength;
         if (empty < 0)
             throw new ArrayIndexOutOfBoundsException("Not enough space in image");
 
         int start = new Random().nextInt(empty);
-        return getJump(new Point(start % imageSize.x, start / imageSize.x)) + messageLength;
+        return getJump(start) + messageLength;
     }
 
-    private static String newCumulativeDistributedPattern(int messageLength, Point imageSize) {
+    private static String newCumulativeDistributedPattern(int messageLength, int imagePixels) {
         final StringBuilder pattern = new StringBuilder();
         final Random r = new Random();
 
-        int empty = imageSize.x * imageSize.y - messageLength;
+        int empty = imagePixels - messageLength;
         if (empty < 0)
             throw new ArrayIndexOutOfBoundsException("Not enough space in image");
 
@@ -54,7 +55,7 @@ public class Patterns {
             if (current + section >= messageLength)
                 section = messageLength - current;
 
-            pattern.append(getJump(new Point(from % imageSize.x, from / imageSize.x)));
+            pattern.append(getJump(from));
             if (section != 0)
                 pattern.append(section);
 
@@ -75,32 +76,47 @@ public class Patterns {
         return pattern.toString();
     }
 
-    private static String newEvenlyDistributedPatter(int messageLength, Point imageSize) {
-        Random r = new Random();
+    private static String newEvenlyDistributedPatter(int messageLength, int imagePixels) {
+        final Random r = new Random();
+        final StringBuilder pattern = new StringBuilder();
 
-        int empty = imageSize.x * imageSize.y - messageLength;
-        if (empty < 0)
-            return null;
+        final int start = r.nextInt(imagePixels);
+        int unused = imagePixels - messageLength;
 
-        int start = r.nextInt(empty / 3);
-        empty -= start;
+        pattern.append(getJump(start));
 
-        int space = r.nextInt(Math.max(empty / 1000, 3)) + 17;
+        final int frequency = imagePixels / 6666;
+        final int space = imagePixels / frequency / 7 * 2;
 
-        int sectCount = 1;
-        int sectSize = messageLength;
+        int i, id = 0, skip, d = 0;
+        for (i = start; id < messageLength; i = modInc(i, 1, imagePixels)) {
+            id++;
+            d++;
 
-        while ((empty -= space) > 0)
-            sectSize = messageLength / ++sectCount;
+            if (unused > space && r.nextInt() % frequency == 0) {
+                pattern.append(d);
+                d = 0;
 
-        StringBuilder pattern = new StringBuilder();
-        for (int i = 0, from = start; i < sectCount; i++, from += sectSize + space)
-            pattern.append(getJump(new Point(from % imageSize.x, from / imageSize.x))).append(sectSize);
+                skip = space + (-1 * r.nextInt(2)) * r.nextInt(space / 10);
+                if (skip + JUMP_LENGTH >= unused)
+                    skip = unused - JUMP_LENGTH - 1;
 
-        return pattern.toString();
+                int to = modInc(i, modInc(JUMP_LENGTH, skip, imagePixels), imagePixels);
+                pattern.append(getJump(to));
+
+                unused -= (skip + JUMP_LENGTH);
+                i = modInc(i, skip, imagePixels);
+            }
+        }
+
+        return pattern.append(d).toString();
     }
 
-    private static String getJump(Point to) {
-        return "<j:" + to.x + "," + to.y + ">";
+    private static String getJump(int to) {
+        return "<j:" + to +  ">";
+    }
+
+    private static int modInc(int i, int delta, int mod) {
+        return (mod + i + delta) % mod;
     }
 }

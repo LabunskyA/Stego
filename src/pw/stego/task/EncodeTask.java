@@ -4,7 +4,6 @@ import pw.stego.Block;
 import pw.stego.util.FString;
 import pw.stego.util.Patterns;
 
-import java.awt.*;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -22,19 +21,18 @@ public class EncodeTask extends Task {
 
     private int dataId = 0;
     private int controlId = 0;
+    private int jump;
 
     private final String pattern;
     private final String[] controls;
     private final String[] counts;
-
-    private final int[] jump = new int[2];
 
     /**
      * Constructor without defined container, but with defined container type
      * @param patternType pattern distribution type cursor Patterns.Type enum
      */
     public EncodeTask(File container, byte[] message, byte[] key, Patterns.Type patternType) {
-        super(container, readBI(container));
+        super(container, readBI(container), Block.toBlocks(key));
         type = Type.ENCODE;
 
         this.key = Block.toBlocks(key);
@@ -43,16 +41,12 @@ public class EncodeTask extends Task {
         pattern = Patterns.createPattern(
                 patternType,
                 data.length,
-                new Point(getImage().getWidth(), getImage().getHeight())
+                getImage().getWidth() * getImage().getHeight()
         );
         this.controls = pattern.split(">(([0-9].*?<)|<)");
         this.counts =  pattern.split("<(i|t|j).*?>");
 
-        start = Integer.parseInt(pattern.substring(3, pattern.indexOf(","))) +
-                Integer.parseInt(pattern.substring(
-                        pattern.indexOf(",") + 1,
-                        pattern.indexOf(">")
-                )) * getImage().getWidth() + this.key.length;
+        start = Integer.parseInt(pattern.substring(3, pattern.indexOf(">"))) + this.key.length;
     }
 
     /**
@@ -60,7 +54,7 @@ public class EncodeTask extends Task {
      * @param pattern in String
      */
     public EncodeTask(File container, byte[] message, byte[] key, String pattern) {
-        super(container, readBI(container));
+        super(container, readBI(container), Block.toBlocks(key));
         type = Type.ENCODE;
 
         this.key = Block.toBlocks(key);
@@ -70,11 +64,8 @@ public class EncodeTask extends Task {
         this.controls = pattern.split(">(([0-9].*?<)|<)");
         this.counts =  pattern.split("<(i|t|j).*?>");
 
-        start = Integer.parseInt(pattern.substring(3, pattern.indexOf(","))) +
-                Integer.parseInt(pattern.substring(
-                        pattern.indexOf(",") + 1,
-                        pattern.indexOf(">")
-                )) * getImage().getWidth() + this.key.length;
+        System.out.println(pattern);
+        start = Integer.parseInt(pattern.substring(3, pattern.indexOf(">"))) + this.key.length;
     }
 
     public Block[] nextDataPart() {
@@ -85,10 +76,8 @@ public class EncodeTask extends Task {
             if (controls[controlId].contains(">"))
                 controls[controlId] = FString.cutTo(controls[controlId], ">");
 
-            String[] coords = FString.cutFrom(controls[controlId], ":").split(",");
-
-            jump[0] = Integer.parseInt(coords[0]);
-            jump[1] = Integer.parseInt(coords[1]);
+            String[] jump = FString.cutFrom(controls[controlId], ":").split(",");
+            this.jump = Integer.parseInt(jump[0]);
         }
 
         int from = ++controlId;
@@ -121,23 +110,21 @@ public class EncodeTask extends Task {
             if (controls[controlId].contains(">"))
                 controls[controlId] = FString.cutTo(controls[controlId], ">");
 
-            String[] coords = FString.cutFrom(controls[controlId], ":").split(",");
-            int[] jump = new int[coords.length];
-
-            for (int i = 0; i < coords.length; i++)
-                jump[i] = Integer.parseInt(coords[i]);
+            String[] jump = FString.cutFrom(controls[controlId], ":").split(",");
+            int dest = Integer.parseInt(jump[0]);
 
             merged.add(new Block(Block.Type.JUMP));
-            if (jump.length == 2)
+            if (jump.length == 1)
                 Collections.addAll(merged, Block.toBlocks(new byte[]{
-                        (byte) (jump[0] & 0xff), (byte) ((jump[0] & 0xff00) >> 8),
-                        (byte) (jump[1] & 0xff), (byte) ((jump[1] & 0x7f00) >> 8)
+                        (byte)  (dest & 0xff)           , (byte) ((dest & 0xff00    ) >> 8),
+                        (byte) ((dest & 0xff0000) >> 16), (byte) ((dest & 0x7f000000) >> 24)
                 }));
             else
                 Collections.addAll(merged, Block.toBlocks(new byte[]{
-                        (byte) (jump[0] & 0xff), (byte) ((jump[0] & 0xff00)          >> 8),
-                        (byte) (jump[1] & 0xff), (byte) ((jump[1] & 0xff00 | 0x8000) >> 8),
-                        (byte) (jump[2] & 0xff)
+                        (byte)  (dest & 0xff)           , (byte) ((dest & 0xff00                 ) >> 8),
+                        (byte) ((dest & 0xff0000) >> 16), (byte) ((dest & 0xff000000 | 0x80000000) >> 24),
+                        //mark
+                        (byte) (Integer.parseInt(jump[1]) & 0xff)
             }));
         } else merged.add(new Block(Block.Type.EOF));
 
@@ -151,7 +138,7 @@ public class EncodeTask extends Task {
         return result;
     }
 
-    public int[] getNextJump() {
+    public int getNextJump() {
         return jump;
     }
 

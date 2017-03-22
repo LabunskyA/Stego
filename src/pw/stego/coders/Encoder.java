@@ -10,6 +10,10 @@ import java.awt.image.BufferedImage;
  * Class for encoding message to container
  */
 public class Encoder extends Coder {
+    public Encoder(int shift, int mZ) {
+        super(shift, mZ);
+    }
+
     /**
      * @param image as container
      * @param from point to start encoding
@@ -17,30 +21,28 @@ public class Encoder extends Coder {
      * @return index of first point after last encoded block
      */
     private int encode(BufferedImage image, int from, Block[] data) {
-        int length = image.getWidth();
-
-        int cursor = from;
-        for (int i = 0; i < data.length; i++, cursor += delta) {
+        jumpTo(from);
+        for (int i = 0; i < data.length; i++, stepFwd()) {
             image.setRGB(
-                    cursor % length, cursor / length,
+                    getCursorX(), getCursorY(),
                     toEncoded(
-                            image.getRGB(cursor % length, cursor / length),
+                            image.getRGB(getCursorX(), getCursorY()),
                             data[i].value
                     )
             );
 
             switch (data[i].type) {
                 case TRANS:
-                    cursor = transpose(cursor, length);
+                    transpose();
                     break;
 
                 case INV:
-                    delta = -delta;
+                    inverse();
                     break;
             }
         }
 
-        return cursor;
+        return getCursor();
     }
 
     /**
@@ -55,13 +57,12 @@ public class Encoder extends Coder {
         EncodeTask task = (EncodeTask) encodeTask;
         BufferedImage image = task.getImage();
 
-        int length = image.getWidth();
-
         try {
             Block[] data;
             while ((data = task.nextDataPart()).length > 0) {
-                int jump[] = task.getNextJump();
-                encode(image, jump[1] * length + jump[0], data);
+                int jump = task.getNextJump();
+                System.out.println("Jump to " + jump % image.getWidth() + " " + jump / image.getWidth());
+                encode(image, jump, data);
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             e.printStackTrace();

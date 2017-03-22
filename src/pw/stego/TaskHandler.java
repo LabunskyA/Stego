@@ -16,8 +16,8 @@ import java.nio.file.Paths;
 public class TaskHandler {
     private Object result;
 
-    private Encoder encoder;
-    private Decoder decoder;
+    private final Encoder encoder;
+    private final Decoder decoder;
 
     private final Task task;
 
@@ -26,9 +26,8 @@ public class TaskHandler {
      * @param task Task to handle
      */
     public TaskHandler(Task task) {
-        if (task instanceof EncodeTask)
-            encoder = new Encoder();
-        else decoder = new Decoder();
+        encoder = new Encoder(task.shift(), task.mZ());
+        decoder = new Decoder(task.shift(), task.mZ());
 
         this.task = task;
     }
@@ -48,6 +47,16 @@ public class TaskHandler {
         return result = false;
     }
 
+    private void clearFalseKeys() {
+        int firstKey;
+        while ((firstKey = decoder.find(task.getImage(), task.getKey())) < task.getStart()) {
+            int x = (firstKey - 1) % task.shift();
+            int y = (firstKey - 1) / task.shift();
+
+            task.getImage().setRGB(x, y, task.getImage().getRGB(x, y) ^ 1);
+        }
+    }
+
     /**
      * Finishes task with writing changes to filesystem
      * @return True if rewriting container is successful and false if not
@@ -55,6 +64,7 @@ public class TaskHandler {
     @SuppressWarnings("WeakerAccess")
     public boolean writeResult() {
         if (task instanceof EncodeTask) try {
+            clearFalseKeys();
             task.finish();
 
             return true;
