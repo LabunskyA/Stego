@@ -3,9 +3,8 @@ package pw.stego.task;
 import pw.stego.Block;
 import pw.stego.util.FString;
 import pw.stego.util.Patterns;
+import pw.stego.util.StegoImage;
 
-import java.io.File;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -16,7 +15,6 @@ import java.util.List;
  */
 public class EncodeTask extends Task {
     private final int start;
-    private Block[] key;
     private Block[] data;
 
     private int dataId = 0;
@@ -31,41 +29,46 @@ public class EncodeTask extends Task {
      * Constructor without defined container, but with defined container type
      * @param patternType pattern distribution type cursor Patterns.Type enum
      */
-    public EncodeTask(File container, byte[] message, byte[] key, Patterns.Type patternType) {
-        super(container, readBI(container), Block.toBlocks(key));
-        type = Type.ENCODE;
+    public EncodeTask(StegoImage container, byte[] message, byte[] key, Patterns.Type patternType) {
+        super(Type.ENCODE, container, Block.toBlocks(key));
 
-        this.key = Block.toBlocks(key);
-        this.data = Block.toBlocks((new String(key) + new String(message)).getBytes(StandardCharsets.ISO_8859_1));
+        this.data = new Block[this.key.length + message.length * 4];
+
+        Block[] data = Block.toBlocks(message);
+        System.arraycopy(this.key, 0, this.data, 0, this.key.length);
+        System.arraycopy(data, 0, this.data, this.key.length, data.length);
 
         pattern = Patterns.createPattern(
                 patternType,
-                data.length,
-                getImage().getWidth() * getImage().getHeight()
+                this.data.length,
+                getImage().getWidth() * getImage().getHeight(),
+                getImage().getWidth()
         );
-        this.controls = pattern.split(">(([0-9].*?<)|<)");
-        this.counts =  pattern.split("<(i|t|j).*?>");
 
-        start = Integer.parseInt(pattern.substring(3, pattern.indexOf(">"))) + this.key.length;
+        this.controls = pattern.split(">(([\\d].*?<)|<)");
+        this.counts =  pattern.split("<([itj]).*?>");
+
+        start = Integer.parseInt(pattern.substring(3, pattern.indexOf(">")));
     }
 
     /**
      * Constructor with pre-defined container
      * @param pattern in String
      */
-    public EncodeTask(File container, byte[] message, byte[] key, String pattern) {
-        super(container, readBI(container), Block.toBlocks(key));
-        type = Type.ENCODE;
+    public EncodeTask(StegoImage container, byte[] message, byte[] key, String pattern) {
+        super(Type.ENCODE, container, Block.toBlocks(key));
 
-        this.key = Block.toBlocks(key);
-        this.data = Block.toBlocks((new String(key) + new String(message)).getBytes(StandardCharsets.ISO_8859_1));
+        this.data = new Block[this.key.length + message.length * 4];
+        Block[] data = Block.toBlocks(message);
+
+        System.arraycopy(this.key, 0, this.data, 0, this.key.length);
+        System.arraycopy(data, 0, this.data, this.key.length, data.length);
 
         this.pattern = pattern;
-        this.controls = pattern.split(">(([0-9].*?<)|<)");
-        this.counts =  pattern.split("<(i|t|j).*?>");
+        this.controls = pattern.split(">(([\\d].*?<)|<)");
+        this.counts =  pattern.split("<([itj]).*?>");
 
-        System.out.println(pattern);
-        start = Integer.parseInt(pattern.substring(3, pattern.indexOf(">"))) + this.key.length;
+        start = Integer.parseInt(pattern.substring(3, pattern.indexOf(">")));
     }
 
     public Block[] nextDataPart() {

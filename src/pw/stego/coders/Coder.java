@@ -1,20 +1,21 @@
 package pw.stego.coders;
 
 import pw.stego.Block;
+import pw.stego.util.StegoImage;
 
-import java.awt.image.BufferedImage;
 
 /**
  * Base class for encoding and decoding
  */
 class Coder {
-    private int delta = 1;
-
     private boolean transposed = false;
     private boolean inverted = false;
 
     private int cursor = 0;
-    private final int shift;
+    private int delta = 1;
+
+    private final int mW;
+
     private final int mZ;
 
     static int toDecoded(int a) {
@@ -40,8 +41,8 @@ class Coder {
         return Block.Type.NONE;
     }
 
-    Coder(int shift, int mZ) {
-        this.shift = shift;
+    Coder(int mW, int mZ) {
+        this.mW = mW;
         this.mZ = mZ;
     }
 
@@ -62,9 +63,12 @@ class Coder {
     void stepFwd() {
         int nextPos = modInc(cursor, delta, mZ);
         if (transposed) {
-            if (!inverted && nextPos / shift < cursor / shift)
+            int y = cursor / mW;
+            int yn = nextPos / mW;
+
+            if (!inverted && yn < y)
                 nextPos = modInc(nextPos, 1, mZ);
-            else if (inverted && nextPos / shift > cursor / shift)
+            else if (inverted && yn > y)
                 nextPos = modInc(nextPos, -1, mZ);
         }
 
@@ -74,9 +78,12 @@ class Coder {
     void stepBwd() {
         int nextPos = modDec(cursor, delta, mZ);
         if (transposed) {
-            if (!inverted && nextPos / shift > cursor / shift)
+            int y = cursor / mW;
+            int yn = nextPos / mW;
+
+            if (!inverted && yn > y)
                 nextPos = modDec(nextPos, 1, mZ);
-            else if (inverted && nextPos / shift < cursor / shift)
+            else if (inverted && yn < y)
                 nextPos = modDec(nextPos, -1, mZ);
         }
 
@@ -87,16 +94,26 @@ class Coder {
         cursor = destination;
     }
 
-    int getDataOnCursor(BufferedImage image) {
+    int getDataOnCursor(StegoImage image) {
         return toDecoded(image.getRGB(getCursorX(), getCursorY()));
     }
 
+    void setDataOnCursor(StegoImage image, byte value) {
+        image.setRGB(
+                getCursorX(), getCursorY(),
+                toEncoded(
+                        image.getRGB(getCursorX(), getCursorY()),
+                        value
+                )
+        );
+    }
+
     int getCursorX() {
-        return cursor % shift;
+        return cursor % mW;
     }
 
     int getCursorY() {
-        return cursor / shift;
+        return cursor / mW;
     }
 
     int getCursor() {
@@ -105,8 +122,8 @@ class Coder {
 
     void transpose() {
         if (!transposed)
-            delta *= shift;
-        else delta /= shift;
+            delta *= mW;
+        else delta /= mW;
 
         transposed = !transposed;
     }

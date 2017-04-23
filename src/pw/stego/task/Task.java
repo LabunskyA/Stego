@@ -1,11 +1,7 @@
 package pw.stego.task;
 
 import pw.stego.Block;
-
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
+import pw.stego.util.StegoImage;
 
 /**
  * Class for whole data with associated container
@@ -13,47 +9,16 @@ import java.io.IOException;
  */
 public class Task {
     enum Type {ENCODE, DECODE}
-    Type type;
 
-    private final Block[] key;
-    private int start;
+    final Block[] key;
 
-    private final File container;
-    private final BufferedImage image;
+    private final Type type;
+    private final StegoImage image;
 
-    Task(File container, BufferedImage image, Block[] key) {
-        this.container = container;
+    Task(Type type, StegoImage image, Block[] key) {
+        this.type = type;
         this.image = image;
-
         this.key = key;
-    }
-
-    static BufferedImage readBI(File file) {
-        BufferedImage original;
-
-        try {
-            original = ImageIO.read(file);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
-
-        BufferedImage image = new BufferedImage(original.getWidth(), original.getHeight(), BufferedImage.TYPE_INT_ARGB);
-        image.getGraphics().drawImage(original, 0, 0, null);
-
-        for(int y = 0; y < original.getHeight(); y++)
-            for(int x = 0; x < original.getWidth(); x++)
-                image.setRGB(x,y, original.getRGB(x,y));
-
-        return image;
-    }
-
-    /**
-     * Writes all changes from RAM to original image file
-     * @throws IOException if something wrong with writing into container
-     */
-    public void finish() throws IOException {
-        ImageIO.write(image, "PNG", container);
     }
 
     public int mZ() {
@@ -64,19 +29,18 @@ public class Task {
         return image.getWidth();
     }
 
-    public BufferedImage getImage() {
+    public Type getType() {
+        return type;
+    }
+
+    public StegoImage getImage() {
         return image;
     }
-    public File getContainer() {
-        return container;
-    }
+
     public Block[] getKey() {
         Block[] copy = new Block[key.length];
         System.arraycopy(key, 0, copy, 0, key.length);
 
         return copy;
-    }
-    public int getStart() {
-        return start;
     }
 }

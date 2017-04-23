@@ -3,8 +3,7 @@ package pw.stego.coders;
 import pw.stego.Block;
 import pw.stego.task.EncodeTask;
 import pw.stego.task.Task;
-
-import java.awt.image.BufferedImage;
+import pw.stego.util.StegoImage;
 
 /**
  * Class for encoding message to container
@@ -20,16 +19,10 @@ public class Encoder extends Coder {
      * @param data to encode
      * @return index of first point after last encoded block
      */
-    private int encode(BufferedImage image, int from, Block[] data) {
+    private int encode(StegoImage image, int from, Block[] data) {
         jumpTo(from);
         for (int i = 0; i < data.length; i++, stepFwd()) {
-            image.setRGB(
-                    getCursorX(), getCursorY(),
-                    toEncoded(
-                            image.getRGB(getCursorX(), getCursorY()),
-                            data[i].value
-                    )
-            );
+            setDataOnCursor(image, data[i].value);
 
             switch (data[i].type) {
                 case TRANS:
@@ -55,19 +48,13 @@ public class Encoder extends Coder {
             throw new WrongTaskException();
 
         EncodeTask task = (EncodeTask) encodeTask;
-        BufferedImage image = task.getImage();
+        StegoImage image = task.getImage();
 
-        try {
-            Block[] data;
-            while ((data = task.nextDataPart()).length > 0) {
-                int jump = task.getNextJump();
-                System.out.println("Jump to " + jump % image.getWidth() + " " + jump / image.getWidth());
-                encode(image, jump, data);
-            }
-        } catch (ArrayIndexOutOfBoundsException e) {
-            e.printStackTrace();
-            return false;
-        }
+        Block[] data;
+        while ((data = task.nextDataPart()).length > 0)
+            encode(image, task.getNextJump(), data);
+
+        setDataOnCursor(image, new Block(Block.Type.EOF).value);
 
         return true;
     }

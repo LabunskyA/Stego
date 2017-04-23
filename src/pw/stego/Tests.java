@@ -3,10 +3,12 @@ package pw.stego;
 import org.junit.Assert;
 import org.junit.Test;
 import pw.Stego;
+import pw.stego.coders.KeyNotFoundException;
 import pw.stego.coders.WrongTaskException;
 import pw.stego.task.DecodeTask;
 import pw.stego.task.EncodeTask;
 import pw.stego.util.Patterns;
+import pw.stego.util.StegoImage;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -24,28 +26,36 @@ import java.util.Random;
  */
 public class Tests {
     @Test
-    public void correctCDecode() throws WrongTaskException, IOException {
-        for (int i = 0; i < 2; i++)
-            Files.write(
-                    Paths.get("/home/lina/steg/test-" + i + ".dec"),
-                    Stego.decode("\2\3\4\5\6".getBytes(), new File("/home/lina/steg/test-" + i + ".png"))
-            );
+    public void distributedPatternTest() throws IOException, KeyNotFoundException {
+        Random r = new Random();
+        StegoImage container = new StegoImage(ImageIO.read(new File("tests/garfield.png")));
+
+        for (int i = 0; i < 1000; i++) {
+            byte[] key = new byte[56];
+            r.nextBytes(key);
+
+            byte[] data = new byte[1 + r.nextInt(1000)];
+            r.nextBytes(data);
+
+            container = Stego.encode(key, data, Patterns.Type.EVENTUALY_DISTRIBUTED, container);
+            byte[] result = Stego.decode(key, container);
+
+            Assert.assertTrue(Arrays.equals(data, result));
+        }
     }
 
     @Test
-    public void correctEncodeTask() throws IOException, WrongTaskException {
-        Assert.assertTrue(
-                testTaskHandler(
-                        new TaskHandler(
-                                new EncodeTask(
-                                    new File("tests/garfield.png"),
-                                    Files.readAllBytes(Paths.get("tests/encode/message.txt")),
-                                    Files.readAllBytes(Paths.get("tests/encode/key.txt")),
-                                    new String(
-                                            Files.readAllBytes(Paths.get("tests/encode/pattern.txt")),
-                                            StandardCharsets.ISO_8859_1
-                                    )
-                            )
+    public void correctEncodeTask() throws IOException, WrongTaskException, KeyNotFoundException {
+        testTaskHandler(
+                new TaskHandler(
+                        new EncodeTask(
+                                new StegoImage(ImageIO.read(new File("tests/garfield.png"))),
+                                Files.readAllBytes(Paths.get("tests/encode/message.txt")),
+                                Files.readAllBytes(Paths.get("tests/encode/key.txt")),
+                                new String(
+                                        Files.readAllBytes(Paths.get("tests/encode/pattern.txt")),
+                                        StandardCharsets.ISO_8859_1
+                                )
                         )
                 )
         );
@@ -57,11 +67,11 @@ public class Tests {
     }
 
     @Test
-    public void correctDecodeTask() throws IOException, WrongTaskException {
-        Assert.assertTrue(
-                testTaskHandler(new TaskHandler(new DecodeTask(
-                        new File("tests/garfield.png"),
-                        Files.readAllBytes(Paths.get("tests/decode/key.txt"))))
+    public void correctDecodeTask() throws IOException, WrongTaskException, KeyNotFoundException {
+        testTaskHandler(
+                new TaskHandler(new DecodeTask(
+                    new StegoImage(ImageIO.read(new File("tests/garfield.png"))),
+                    Files.readAllBytes(Paths.get("tests/decode/key.txt")))
                 )
         );
 
@@ -83,29 +93,8 @@ public class Tests {
         System.out.println("Percentage: " + zeros * 1.0 / (testImage.getWidth() * testImage.getHeight()));
     }
 
-    private boolean testTaskHandler(TaskHandler handler) throws WrongTaskException {
-        return handler.process() != null && handler.writeResult();
-    }
-
-    @Test
-    public void sizeTest() throws IOException, WrongTaskException {
-        Random r = new Random();
-
-        byte[] doc = new byte[18 * 1000 * 1024];
-        r.nextBytes(doc);
-
-        testTaskHandler(new TaskHandler(new EncodeTask(
-                new File("tests/BIG.png"),
-                doc,
-                Files.readAllBytes(Paths.get("tests/encode/key.txt")),
-                Patterns.Type.SIMPLE
-        )));
-
-        testTaskHandler(new TaskHandler(new DecodeTask(
-                    new File("tests/BIG.png"),
-                    Files.readAllBytes(Paths.get("tests/decode/key.txt"))
-        )));
-
-        Assert.assertTrue(Arrays.equals(doc, Files.readAllBytes(Paths.get("tests/BIG.dec"))));
+    private void testTaskHandler(TaskHandler handler) throws WrongTaskException, KeyNotFoundException, IOException {
+        handler.process();
+        handler.finish();
     }
 }

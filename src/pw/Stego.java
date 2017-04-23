@@ -2,12 +2,13 @@ package pw;
 
 import pw.stego.TaskHandler;
 import pw.stego.coders.Decoder;
+import pw.stego.coders.KeyNotFoundException;
 import pw.stego.coders.WrongTaskException;
 import pw.stego.task.DecodeTask;
 import pw.stego.task.EncodeTask;
 import pw.stego.util.Patterns;
+import pw.stego.util.StegoImage;
 
-import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -16,8 +17,10 @@ import java.nio.file.Files;
  * Basic static functions, highest abstraction level
  * Created by lina on 21.09.16.
  */
+@SuppressWarnings("unused")
 public class Stego {
-    public static File encode(byte[] key, byte[] message, String pattern, File container) throws IOException {
+    public static StegoImage encode(byte[] key, byte[] message,
+                                    String pattern, StegoImage container) throws IOException {
         try {
             EncodeTask task = new EncodeTask(
                     container,
@@ -27,12 +30,13 @@ public class Stego {
             );
 
             encodeTask(task);
-        } catch (WrongTaskException ignored) { /*never happens*/ }
+        } catch (WrongTaskException | KeyNotFoundException ignored) { /*never happens*/ }
 
         return container;
     }
 
-    public static File encode(File key, File message, File pattern, File container) throws IOException {
+    public static StegoImage encode(File key, File message,
+                                    File pattern, StegoImage container) throws IOException {
         try {
             EncodeTask task = new EncodeTask(
                     container,
@@ -42,12 +46,13 @@ public class Stego {
             );
 
             encodeTask(task);
-        } catch (WrongTaskException e) { /*never happens*/ }
+        } catch (WrongTaskException | KeyNotFoundException e) { /*never happens*/ }
 
         return container;
     }
 
-    public static File encode(byte[] key, byte[] message, Patterns.Type type, File container) throws IOException {
+    public static StegoImage encode(byte[] key, byte[] message, Patterns.Type type,
+                                    StegoImage container) throws IOException {
         try {
             EncodeTask task = new EncodeTask(
                     container,
@@ -57,12 +62,13 @@ public class Stego {
             );
 
             encodeTask(task);
-        } catch (WrongTaskException e) { /*never happens*/ }
+        } catch (WrongTaskException | KeyNotFoundException e) { /*never happens*/ }
 
         return container;
     }
 
-    public static File encode(File key, File message, Patterns.Type type, File container) throws IOException {
+    public static StegoImage encode(File key, File message,
+                                    Patterns.Type type, StegoImage container) throws IOException {
         try {
             EncodeTask task = new EncodeTask(
                     container,
@@ -72,64 +78,44 @@ public class Stego {
             );
 
             encodeTask(task);
-        } catch (WrongTaskException e) { /*never happens*/ }
+        } catch (WrongTaskException | KeyNotFoundException e) { /*never happens*/ }
 
         return container;
     }
 
-    public static byte[] decode(byte[] key, File container) throws IOException {
+    public static byte[] decode(byte[] key, StegoImage container) throws IOException, KeyNotFoundException {
         try {
             DecodeTask task = new DecodeTask(container, key);
             Decoder decoder = new Decoder(task.shift(), task.mZ());
 
-            byte[] decoded = decoder.decode(task); //<3
-            task.finish();
-
-            return decoded;
+            return decoder.decode(task);
         } catch (WrongTaskException e) { /*never happens*/ }
 
         return new byte[0];
     }
 
-    public static byte[] decode(File key, File container) throws IOException {
+    public static byte[] decode(File key, StegoImage container) throws IOException, KeyNotFoundException {
         try {
             DecodeTask task = new DecodeTask(container, Files.readAllBytes(key.toPath()));
             Decoder decoder = new Decoder(task.shift(), task.mZ());
 
-            byte[] decoded = decoder.decode(task);
-            task.finish();
-
-            return decoded;
+            return decoder.decode(task);
         } catch (WrongTaskException e) { /*never happens*/ }
 
         return new byte[0];
     }
 
-    public static boolean tryKey(byte[] key, File container) throws IOException {
+    public static boolean tryKey(byte[] key, StegoImage container) throws IOException {
         DecodeTask task = new DecodeTask(container, key);
         Decoder decoder = new Decoder(task.shift(), task.mZ());
 
-        return decoder.checkKey(key, ImageIO.read(container));
+        return decoder.checkKey(key, container);
     }
 
-//    private static void removeBefore(BufferedImage image, Block[] toRemove, int before) {
-//        Decoder decoder = new Decoder(image.getWidth(), image.getHeight() * image.getWidth());
-//        int length = image.getWidth();
-//
-//        int firstKey;
-//        while ((firstKey = decoder.find(image, toRemove)) < before) {
-//            int x = (firstKey - 1) % length;
-//            int y = (firstKey - 1) / length;
-//
-//            image.setRGB(x, y, image.getRGB(x, y) ^ 1);
-//        }
-//    }
-
-    private static void encodeTask(EncodeTask task) throws WrongTaskException, IOException {
+    private static void encodeTask(EncodeTask task) throws WrongTaskException, IOException, KeyNotFoundException {
         TaskHandler handler = new TaskHandler(task);
-        handler.process();
 
-//        removeBefore(task.getImage(), task.getKey(), task.getStart());
-        handler.writeResult();
+        handler.process();
+        handler.finish();
     }
 }
